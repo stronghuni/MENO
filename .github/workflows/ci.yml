@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: typecheck + unit tests
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Skip native module install scripts up-front; @electron/rebuild handles
+      # them next. The postinstall (electron-builder install-app-deps) also
+      # runs @electron/rebuild but we re-run with -f for determinism.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Rebuild native modules for Electron
+        run: npx @electron/rebuild -f
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Integration tests (downloads + URL reachability)
+        run: npx tsx scripts/integration-test.mjs
+
+  build-mac:
+    name: build macOS DMG
+    runs-on: macos-latest
+    needs: verify
+    # Only run on tags so we don't burn CI minutes on every push.
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run build:mac
+        env:
+          # Skip notarization in CI — handled separately when a developer
+          # account secret is configured. Set CSC_LINK and APPLE_ID secrets
+          # to enable signing.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meeting-notes-mac
+          path: dist/*.dmg
+          retention-days: 14

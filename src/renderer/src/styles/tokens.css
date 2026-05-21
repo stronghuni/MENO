@@ -1,0 +1,461 @@
+:root {
+  color-scheme: light dark;
+
+  /* Neutral palette — very slight warm cast for paper-like feel (not stark cool) */
+  --bg: #ffffff;
+  --bg-soft: #fafaf9;
+  --bg-sunk: #f5f5f4;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.06);
+  --bg-translucent-card: rgba(255, 255, 255, 0.72);
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --border-sidebar: rgba(0, 0, 0, 0.06);
+
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-faint: #a1a1aa;
+  --text-inverse: #ffffff;
+
+  /* Accent: a confident, slightly desaturated indigo that reads serious */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --accent-soft-strong: rgba(37, 99, 235, 0.14);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --danger-hover: #b91c1c;
+
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.1);
+
+  --warn: #d97706;
+
+  /* Radius — match macOS rhythm: 6px small, 10px medium, 14px cards */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 1px 2px rgba(15, 23, 42, 0.05), 0 20px 50px rgba(15, 23, 42, 0.1);
+
+  /* Typography — macOS native first. Falls back to Pretendard / SD Gothic Neo for Korean. */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Apple SD Gothic Neo", "Pretendard Variable", Pretendard, "Helvetica Neue",
+    "Segoe UI", system-ui, sans-serif;
+  --font-mono:
+    "SF Mono", ui-monospace, "JetBrains Mono", "Menlo", "Consolas", monospace;
+  /* Tighter tracking for headlines feels more native on macOS */
+  --tracking-tight: -0.011em;
+  --tracking-display: -0.022em;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --sidebar-width: 232px;
+  --header-height: 52px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  /* Non-Electron preview fallback: paint the sidebar zone with the muted
+     gray that macOS vibrancy approximates. The Electron renderer adds
+     `.is-electron` on <html> which switches back to transparent so the
+     real vibrancy material can show through. */
+  background: var(--bg-sunk);
+}
+
+html.is-electron,
+html.is-electron body {
+  background: transparent;
+}
+
+html.theme-dark {
+  --bg: #1c1c1e;
+  --bg-soft: #242425;
+  --bg-sunk: #19191a;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.08);
+  --bg-translucent-card: rgba(30, 30, 32, 0.72);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-sidebar: rgba(255, 255, 255, 0.08);
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-faint: #71717a;
+  --text-inverse: #18181b;
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+  --accent-soft: rgba(96, 165, 250, 0.16);
+  --accent-soft-strong: rgba(96, 165, 250, 0.24);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.16);
+  --danger-hover: #ef4444;
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.16);
+  --warn: #fbbf24;
+  --warn-banner-bg: rgba(202, 138, 4, 0.18);
+  --warn-banner-text: #fcd34d;
+  --warn-banner-border: rgba(202, 138, 4, 0.36);
+  --success-banner-bg: rgba(22, 163, 74, 0.16);
+}
+
+html.theme-light {
+  --bg: #ffffff;
+  --bg-soft: #fafaf9;
+  --bg-sunk: #f5f5f4;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.06);
+  --bg-translucent-card: rgba(255, 255, 255, 0.72);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --border-sidebar: rgba(0, 0, 0, 0.06);
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-faint: #a1a1aa;
+  --text-inverse: #ffffff;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --accent-soft-strong: rgba(37, 99, 235, 0.14);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --danger-hover: #b91c1c;
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.1);
+  --warn: #d97706;
+  --warn-banner-bg: #fef3c7;
+  --warn-banner-text: #854d0e;
+  --warn-banner-border: #fde68a;
+  --success-banner-bg: #f0fdf4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1e;
+    --bg-soft: #242425;
+    --bg-sunk: #19191a;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.08);
+    --bg-translucent-card: rgba(30, 30, 32, 0.72);
+
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --border-sidebar: rgba(255, 255, 255, 0.08);
+
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-faint: #71717a;
+    --text-inverse: #18181b;
+
+    --accent: #60a5fa;
+    --accent-hover: #3b82f6;
+    --accent-soft: rgba(96, 165, 250, 0.16);
+    --accent-soft-strong: rgba(96, 165, 250, 0.24);
+
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --danger-hover: #ef4444;
+
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.16);
+
+    --warn: #fbbf24;
+    --warn-banner-bg: rgba(202, 138, 4, 0.18);
+    --warn-banner-text: #fcd34d;
+    --warn-banner-border: rgba(202, 138, 4, 0.36);
+
+    --success-banner-bg: rgba(22, 163, 74, 0.16);
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+/* Form controls inherit our theme colors. Without this they fall through
+   to the OS's prefers-color-scheme — when the user explicitly toggles
+   the app theme but the OS is on the opposite mode, the controls show
+   dark-on-dark or light-on-light. */
+input,
+textarea,
+select {
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.12s ease;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 1px 5px;
+  background: var(--bg-sunk);
+  border-radius: 4px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes recording-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4), 0 0 0 12px rgba(220, 38, 38, 0.08);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(220, 38, 38, 0), 0 0 0 28px rgba(220, 38, 38, 0);
+  }
+}
+
+/* Reusable button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  transition:
+    background 0.12s var(--ease-out),
+    border-color 0.12s var(--ease-out),
+    box-shadow 0.12s var(--ease-out),
+    transform 0.08s var(--ease-out);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: var(--text);
+  color: var(--text-inverse);
+  border-color: var(--text);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: var(--text-inverse);
+  border-color: var(--accent);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--text-inverse);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn-lg {
+  height: 44px;
+  padding: 0 22px;
+  font-size: 13.5px;
+  border-radius: var(--radius);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  transition:
+    border-color 0.12s var(--ease-out),
+    box-shadow 0.12s var(--ease-out);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 10px 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717a' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0;
+  margin-bottom: var(--space-2);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.faint {
+  color: var(--text-faint);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}

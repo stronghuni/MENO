@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+out
+
+# Bundler cache
+.vite
+
+# OS
+.DS_Store
+
+# Cache + logs
+.eslintcache
+*.log*
+
+# Local tooling
+.gstack/
+.superpowers/
+
+# Local artifacts
+/tmp
+recordings/
+*.wav
+
+# Editor
+.vscode/settings.json
