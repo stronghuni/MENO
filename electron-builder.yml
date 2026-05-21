@@ -1,4 +1,4 @@
-appId: io.namuneulbo.meetingnotes
+appId: io.namuneulbo.meno
 productName: MENO
 directories:
   buildResources: build
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: meeting-notes
+  executableName: meno
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

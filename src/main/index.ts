@@ -1,17 +1,50 @@
-import { app, shell, BrowserWindow, Menu, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, Menu, nativeImage, protocol } from 'electron'
+import { createReadStream, existsSync, renameSync, statSync } from 'fs'
 import { join } from 'path'
+import { Readable } from 'stream'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
 import { buildAppMenu } from './menu'
 import { gracefulShutdown } from './services/recording'
 import { startDevBridge } from './devBridge'
+import { getMeeting } from './services/storage'
 
-// Preserve the existing userData directory so that renaming the app to
-// MENO doesn't strand users' meetings, models, settings and chat
-// history at the old `meeting-notes` path. Must run before any Electron
-// API touches paths, which is why it sits at module top.
-app.setPath('userData', join(app.getPath('appData'), 'meeting-notes'))
+// Register `meno-audio://` as a privileged scheme so the renderer can use
+// it inside an <audio> tag and CSP allows fetching from it. Must be done
+// before app.whenReady — registerSchemesAsPrivileged is rejected later.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'meno-audio',
+    privileges: {
+      standard: true,
+      stream: true,
+      supportFetchAPI: true,
+      secure: true
+    }
+  }
+])
+
+
+// One-shot migration: if a previous build wrote to `meeting-notes/`,
+// rename the whole directory to `meno/` so users keep their meetings,
+// models, settings and chat history across the rename. Must run before
+// any Electron API touches paths, which is why it sits at module top.
+function migrateUserDataDir(): void {
+  const appData = app.getPath('appData')
+  const oldDir = join(appData, 'meeting-notes')
+  const newDir = join(appData, 'meno')
+  if (existsSync(oldDir) && !existsSync(newDir)) {
+    try {
+      renameSync(oldDir, newDir)
+      console.log(`[migration] userData: ${oldDir} → ${newDir}`)
+    } catch (e) {
+      console.error('[migration] userData rename failed:', e)
+    }
+  }
+}
+migrateUserDataDir()
+app.setPath('userData', join(app.getPath('appData'), 'meno'))
 
 function createWindow(): void {
   const isMac = process.platform === 'darwin'
@@ -61,7 +94,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('io.namuneulbo.meetingnotes')
+  electronApp.setAppUserModelId('io.namuneulbo.meno')
 
   if (process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(nativeImage.createFromPath(icon))
@@ -71,6 +104,46 @@ app.whenReady().then(() => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  // Serve meeting audio for the inline player. Looks up the meeting by id
+  // from the URL host (meno-audio://<meetingId>) and streams the WAV file
+  // back with Range support so the <audio> element can seek without
+  // re-downloading from byte 0.
+  protocol.handle('meno-audio', async (req) => {
+    const url = new URL(req.url)
+    const meetingId = url.hostname
+    const m = getMeeting(meetingId)
+    if (!m?.audioPath || !existsSync(m.audioPath)) {
+      return new Response('Audio not found', { status: 404 })
+    }
+    const stat = statSync(m.audioPath)
+    const range = req.headers.get('Range')
+    if (range) {
+      const match = /bytes=(\d+)-(\d*)/.exec(range)
+      if (match) {
+        const start = parseInt(match[1], 10)
+        const end = match[2] ? parseInt(match[2], 10) : stat.size - 1
+        const stream = createReadStream(m.audioPath, { start, end })
+        return new Response(Readable.toWeb(stream) as unknown as ReadableStream, {
+          status: 206,
+          headers: {
+            'Content-Type': 'audio/wav',
+            'Content-Length': String(end - start + 1),
+            'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+            'Accept-Ranges': 'bytes'
+          }
+        })
+      }
+    }
+    const stream = createReadStream(m.audioPath)
+    return new Response(Readable.toWeb(stream) as unknown as ReadableStream, {
+      headers: {
+        'Content-Type': 'audio/wav',
+        'Content-Length': String(stat.size),
+        'Accept-Ranges': 'bytes'
+      }
+    })
   })
 
   registerIpcHandlers()

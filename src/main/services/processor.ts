@@ -1,9 +1,7 @@
 import { getMeeting, updateMeeting } from './storage'
-import { transcribeWav, isModelInstalled } from './transcriber'
-import { diarizeWav, isDiarizationInstalled } from './diarizer'
+import { transcribeWavChunked, isModelInstalled } from './transcriber'
 import { isLlmInstalled, summarize } from './summarizer'
 import { extractAttendees, extractTags } from '../domain/prompts'
-import { mergeTranscriptWithDiarization } from '../domain/merger'
 import { broadcast as send } from './broadcaster'
 import { hasSecret } from './keychain'
 import { loadSettings } from './settings'
@@ -34,29 +32,43 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
   try {
     broadcast({ meetingId, stage: 'transcribing', message: '한국어 전사 중…' })
     const partial: TranscriptSegment[] = []
-    let segments = await transcribeWav(audioPath, ({ segment }) => {
-      partial.push(segment)
-      broadcast({
-        meetingId,
-        stage: 'transcribing',
-        message: `전사 중… (${partial.length}개 세그먼트)`,
-        partialSegments: partial.slice()
-      })
-    })
-
-    if (isDiarizationInstalled()) {
-      broadcast({ meetingId, stage: 'diarizing', message: '화자 분리 중…' })
-      try {
-        const diarization = await diarizeWav(audioPath)
-        segments = mergeTranscriptWithDiarization(segments, diarization)
-      } catch (e) {
-        console.warn('Diarization failed, continuing without speaker labels:', e)
+    const segments = await transcribeWavChunked(
+      audioPath,
+      (segment, count) => {
+        partial.push(segment)
+        broadcast({
+          meetingId,
+          stage: 'transcribing',
+          message: `전사 중… (${count}개 세그먼트)`,
+          partialSegments: partial.slice()
+        })
+      },
+      (p) => {
+        // After every chunk: persist what we have so a crash mid-pipeline
+        // doesn't lose the work. The user opens the meeting later and
+        // sees whatever was committed up to the point of failure.
+        updateMeeting(meetingId, {
+          transcriptJson: JSON.stringify(p.accumulatedSegments)
+        })
+        const startMin = Math.floor(p.chunkStartSec / 60)
+        const endMin = Math.ceil(p.chunkEndSec / 60)
+        const msg =
+          p.totalChunks > 1
+            ? `전사 ${p.chunkIdx}/${p.totalChunks} (${startMin}~${endMin}분) — ${p.accumulatedSegments.length}개 세그먼트`
+            : `전사 중… (${p.accumulatedSegments.length}개 세그먼트)`
+        broadcast({
+          meetingId,
+          stage: 'transcribing',
+          message: msg,
+          partialSegments: p.accumulatedSegments
+        })
       }
-    }
+    )
 
-    // Respect any attendee list the user typed in the new-meeting form.
-    // Only fall back to whatever the diarizer surfaces when the field is
-    // empty — overwriting user input would be confusing.
+    // Speaker diarization was removed — onnxruntime 1.24 KleidiAI crash.
+    // Attendee list comes from the user's new-meeting form; if they
+    // skipped the field we fall back to whatever speaker labels the
+    // segments carry (currently always null, since diarization is off).
     const existing = getMeeting(meetingId)
     const userAttendees: string[] = existing?.attendeesJson
       ? (JSON.parse(existing.attendeesJson) as string[])

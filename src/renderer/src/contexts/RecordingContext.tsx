@@ -19,6 +19,8 @@ export interface RecordingState {
   meetingTitle: string | null
   elapsedMs: number
   level: number
+  /** Live FFT analyser; null until start() resolves. See useMicrophone.ts. */
+  analyserRef: React.MutableRefObject<AnalyserNode | null>
   partialSegments: TranscriptSegment[]
   devices: { deviceId: string; label: string }[]
   selectedDeviceId: string | null
@@ -160,6 +162,7 @@ export function RecordingProvider({ children }: { children: React.ReactNode }): 
     meetingTitle,
     elapsedMs,
     level: mic.level,
+    analyserRef: mic.analyserRef,
     partialSegments,
     devices: mic.devices,
     selectedDeviceId: mic.selectedDeviceId,

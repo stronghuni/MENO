@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Meeting, ProcessingStatus, TranscriptSegment } from '../../../shared/types'
 import { getApi } from '../lib/api'
+import AudioPlayer from '../components/AudioPlayer'
 
 function parseTranscript(json: string | null): TranscriptSegment[] {
   if (!json) return []
@@ -57,8 +58,19 @@ export default function MeetingDetail(): React.JSX.Element {
     if (!api) return
     const unsubscribe = api.processing.onUpdate((s) => {
       if (s.meetingId !== id) return
+      const previousStage = status?.stage
       setStatus(s)
-      if (s.stage === 'done') {
+      // Refresh the meeting whenever the pipeline crosses a boundary that
+      // writes new data to the DB. After 'diarizing' completes the
+      // transcript has just been saved, after 'summarizing' the notes are
+      // saved, and after 'done' everything is final. Without this the
+      // transcript pane would stay empty until the very end of the run.
+      const reloadStages: ProcessingStatus['stage'][] = [
+        'summarizing',
+        'uploading',
+        'done'
+      ]
+      if (s.stage !== previousStage && reloadStages.includes(s.stage)) {
         void api.meetings.get(id!).then((m) => {
           setMeeting(m)
           if (m && !notesDirty.current) setNotesDraft(m.notesMd ?? '')
@@ -66,16 +78,24 @@ export default function MeetingDetail(): React.JSX.Element {
       }
     })
     return unsubscribe
-  }, [id])
+  }, [id, status?.stage])
 
   const persisted = parseTranscript(meeting?.transcriptJson ?? null)
   const live = status?.partialSegments ?? []
+  // Prefer the persisted transcript whenever it's available — once the
+  // pipeline writes to DB it's the source of truth. During the initial
+  // 'transcribing' stage we surface the live partial segments so the
+  // user sees progress.
   const segments =
-    status?.stage === 'transcribing' || status?.stage === 'done'
-      ? live.length
+    persisted.length > 0
+      ? persisted
+      : status?.stage === 'transcribing' && live.length > 0
         ? live
-        : persisted
-      : persisted
+        : []
+  const notesSummarizing =
+    !!status &&
+    (status.stage === 'summarizing' ||
+      (status.stage === 'uploading' && !meeting?.notesMd))
 
   const runAction = async (fn: () => Promise<void>): Promise<void> => {
     setActionError(null)
@@ -285,11 +305,20 @@ export default function MeetingDetail(): React.JSX.Element {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 24,
+              gridTemplateRows: 'auto 1fr',
+              gap: 16,
               height: '100%'
             }}
           >
+            <AudioPlayer meetingId={meeting.id} hasAudio={!!meeting.audioPath} />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 24,
+                minHeight: 0
+              }}
+            >
             <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <h3 style={{ fontSize: 13, marginBottom: 10, color: 'var(--text-muted)' }}>
                 전사본
@@ -298,8 +327,16 @@ export default function MeetingDetail(): React.JSX.Element {
                 className="card"
                 style={{ flex: 1, overflow: 'auto', display: 'grid', gap: 10, padding: 16 }}
               >
-                {status && status.stage !== 'done' && status.stage !== 'idle' && (
-                  <StatusBanner status={status} />
+                {/* Transcript-section status only while transcription itself
+                    is in flight. Once segments land we hand off to the notes
+                    section's spinner — no more status noise here. */}
+                {segments.length === 0 && status?.stage === 'transcribing' && (
+                  <div className="notes-spinner" style={{ minHeight: 120 }}>
+                    <span className="notes-spinner-ring" aria-hidden />
+                    <span className="notes-spinner-label">
+                      {status.message ?? '전사 중…'}
+                    </span>
+                  </div>
                 )}
                 {segments.length === 0 && status?.stage !== 'transcribing' && (
                   <div className="muted" style={{ fontSize: 13 }}>
@@ -414,6 +451,11 @@ export default function MeetingDetail(): React.JSX.Element {
                         {meeting.notesMd}
                       </ReactMarkdown>
                     </div>
+                  ) : notesSummarizing ? (
+                    <div className="notes-spinner">
+                      <span className="notes-spinner-ring" aria-hidden />
+                      <span className="notes-spinner-label">회의록 작성 중…</span>
+                    </div>
                   ) : (
                     <div className="muted" style={{ fontSize: 13 }}>
                       {meeting.transcriptJson
@@ -424,9 +466,22 @@ export default function MeetingDetail(): React.JSX.Element {
                 </div>
               )}
             </section>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Full-screen upload veil — blurs everything underneath while
+          either the auto-pipeline is in its `uploading` stage or the
+          user manually clicked the upload button. */}
+      {(uploading || status?.stage === 'uploading') && (
+        <div className="upload-veil" role="status" aria-live="polite">
+          <div className="upload-veil-card">
+            <span className="notes-spinner-ring" aria-hidden />
+            <span className="upload-veil-label">Notion에 업로드 중…</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -445,48 +500,6 @@ function speakerColor(label: string | null): string {
   if (!label) return 'var(--text-faint)'
   const n = parseInt(label.replace(/\D/g, ''), 10) || 1
   return SPEAKER_PALETTE[(n - 1) % SPEAKER_PALETTE.length]
-}
-
-function StatusBanner({ status }: { status: ProcessingStatus }): React.JSX.Element {
-  const color =
-    status.stage === 'error'
-      ? 'var(--danger)'
-      : status.stage === 'done'
-        ? 'var(--success)'
-        : 'var(--accent)'
-  const bg =
-    status.stage === 'error'
-      ? 'var(--danger-soft)'
-      : status.stage === 'done'
-        ? 'var(--success-banner-bg)'
-        : 'var(--accent-soft)'
-  return (
-    <div
-      style={{
-        padding: '10px 12px',
-        borderRadius: 'var(--radius)',
-        background: bg,
-        color,
-        fontSize: 12,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10
-      }}
-    >
-      {status.stage !== 'error' && status.stage !== 'done' && (
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: color,
-            animation: 'pulse 1.4s ease-in-out infinite'
-          }}
-        />
-      )}
-      {status.message ?? status.stage}
-    </div>
-  )
 }
 
 interface MenuItem {

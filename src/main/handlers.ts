@@ -26,7 +26,6 @@ import {
 } from './services/recording'
 import { getProcessingStatus, processRecording } from './services/processor'
 import { isModelInstalled } from './services/transcriber'
-import { getDiarizationStatus, isDiarizationInstalled } from './services/diarizer'
 import { isLlmInstalled } from './services/summarizer'
 import { clearChatHistory, getChatHistory, sendMessage } from './services/chat'
 import { deleteSecret, getSecret, hasSecret, setSecret, SecretKey } from './services/keychain'
@@ -74,8 +73,6 @@ export const handlers: Record<string, Handler> = {
 
   // ── models ────────────────────────────────────────────────────────────
   'models:whisperInstalled': () => isModelInstalled(),
-  'models:diarizationInstalled': () => isDiarizationInstalled(),
-  'models:diarizationStatus': () => getDiarizationStatus(),
   'models:llmInstalled': () => isLlmInstalled(),
 
   // ── secrets / settings ────────────────────────────────────────────────

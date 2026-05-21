@@ -172,13 +172,12 @@ export default function Chat(): React.JSX.Element {
 
   const isEmpty = messages.length === 0 && !streaming
 
-  // Cycle the suggestion every 3s while empty. Each tick fades out for
-  // ~350ms (matches the CSS transition), swaps the index, then fades
-  // back in. Skip the interval entirely when we're not showing the
-  // suggestion area — avoids unmount-time work and stray re-renders.
+  // Cycle the suggestion every 3s while empty. We mirror the CSS
+  // transition duration here so the text swap happens at the still
+  // point between fade-out and fade-in — no flash of stale text.
   useEffect(() => {
     if (!isEmpty) return
-    const FADE_MS = 350
+    const FADE_MS = 900
     const id = setInterval(() => {
       setSuggestionVisible(false)
       setTimeout(() => {

@@ -64,13 +64,6 @@ const api = {
   },
   models: {
     whisperInstalled: (): Promise<boolean> => ipcRenderer.invoke('models:whisperInstalled'),
-    diarizationInstalled: (): Promise<boolean> =>
-      ipcRenderer.invoke('models:diarizationInstalled'),
-    diarizationStatus: (): Promise<{
-      segmentation: boolean
-      embedding: boolean
-      ready: boolean
-    }> => ipcRenderer.invoke('models:diarizationStatus'),
     llmInstalled: (): Promise<boolean> => ipcRenderer.invoke('models:llmInstalled')
   },
   secrets: {

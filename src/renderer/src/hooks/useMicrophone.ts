@@ -20,6 +20,13 @@ export interface UseMicrophone {
   isRecording: boolean
   isPaused: boolean
   level: number
+  /**
+   * Live AnalyserNode reference for sound-reactive visualizations.
+   * Consumers call `getByteFrequencyData(arr)` in their rAF loop —
+   * doing this through state would cause 60 React renders per second.
+   * The ref is `null` until `start()` resolves.
+   */
+  analyserRef: React.MutableRefObject<AnalyserNode | null>
   start: () => Promise<void>
   stop: () => Promise<void>
   pause: () => Promise<void>
@@ -39,6 +46,7 @@ export function useMicrophone(opts: UseMicrophoneOptions = {}): UseMicrophone {
   const ctxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
   const onChunkRef = useRef(opts.onChunk)
   const onLevelRef = useRef(opts.onLevel)
   onChunkRef.current = opts.onChunk
@@ -88,6 +96,13 @@ export function useMicrophone(opts: UseMicrophoneOptions = {}): UseMicrophone {
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE })
       const source = ctx.createMediaStreamSource(stream)
       const processor = ctx.createScriptProcessor(BUFFER_SIZE, 1, 1)
+      // FFT analyser for visualization. 256-bin FFT gives 128 frequency
+      // bins which is enough resolution for a column-mapped dot grid
+      // (we typically have ~60 columns). Smoothing 0.6 = snappy attack
+      // with a gentle decay, more responsive than the browser default.
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.6
 
       processor.onaudioprocess = (e: AudioProcessingEvent): void => {
         const input = e.inputBuffer.getChannelData(0)
@@ -102,13 +117,18 @@ export function useMicrophone(opts: UseMicrophoneOptions = {}): UseMicrophone {
         onLevelRef.current?.(rms)
       }
 
+      // Tap the source for both the WAV-bound script processor AND the
+      // FFT analyser. analyser doesn't need to be in the chain to a
+      // destination — it just observes whatever is connected to it.
       source.connect(processor)
+      source.connect(analyser)
       processor.connect(ctx.destination)
 
       streamRef.current = stream
       ctxRef.current = ctx
       sourceRef.current = source
       processorRef.current = processor
+      analyserRef.current = analyser
       setIsRecording(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -125,6 +145,7 @@ export function useMicrophone(opts: UseMicrophoneOptions = {}): UseMicrophone {
     sourceRef.current = null
     streamRef.current = null
     ctxRef.current = null
+    analyserRef.current = null
     setIsRecording(false)
     setIsPaused(false)
     setLevel(0)
@@ -164,6 +185,7 @@ export function useMicrophone(opts: UseMicrophoneOptions = {}): UseMicrophone {
     isRecording,
     isPaused,
     level,
+    analyserRef,
     start,
     stop,
     pause,

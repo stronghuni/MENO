@@ -101,8 +101,6 @@ function buildHttpApi(): WindowApi {
     },
     models: {
       whisperInstalled: () => invoke('models:whisperInstalled'),
-      diarizationInstalled: () => invoke('models:diarizationInstalled'),
-      diarizationStatus: () => invoke('models:diarizationStatus'),
       llmInstalled: () => invoke('models:llmInstalled')
     },
     secrets: {

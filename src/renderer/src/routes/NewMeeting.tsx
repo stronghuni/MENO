@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AttendeesInput from '../components/AttendeesInput'
-import LevelMeter from '../components/LevelMeter'
 import WaveformPulse from '../components/WaveformPulse'
 import { useRecording } from '../contexts/RecordingContext'
 import { getApi } from '../lib/api'
@@ -202,48 +201,12 @@ export default function NewMeeting(): React.JSX.Element {
     )
   }
 
-  // ─────────────── Recording view (player + waveform pulse) ───────────────
+  // ─────────────── Recording view (full-bleed visualizer + bottom dock) ───
   return (
-    <div className="main">
-      <header className="main-header">
-        <h1>{rec.meetingTitle ?? (rec.isPaused ? '일시정지됨' : '녹음 중')}</h1>
-        <button className="btn btn-danger" onClick={stopRecording} disabled={busy}>
-          회의 종료
-        </button>
+    <div className="main recording-main">
+      <header className="main-header recording-header">
+        <h1>{rec.meetingTitle ?? '녹음 중'}</h1>
       </header>
-
-      <div className="player-bar">
-        <div className="player-status">
-          <span className={`player-dot ${rec.isPaused ? 'paused' : ''}`} aria-hidden />
-          <span className="player-status-text">{rec.isPaused ? '일시정지' : 'REC'}</span>
-        </div>
-
-        <div className="player-time" aria-label="elapsed">
-          {formatDuration(rec.elapsedMs)}
-        </div>
-
-        <div className="player-level">
-          <LevelMeter level={rec.level} active={rec.isRecording && !rec.isPaused} />
-        </div>
-
-        <button
-          className="btn btn-ghost player-control"
-          onClick={togglePause}
-          disabled={busy}
-          aria-label={rec.isPaused ? '재개' : '일시정지'}
-          title={rec.isPaused ? '재개' : '일시정지'}
-        >
-          {rec.isPaused ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          )}
-        </button>
-      </div>
 
       {rec.watchdog && (
         <div
@@ -261,13 +224,58 @@ export default function NewMeeting(): React.JSX.Element {
         </div>
       )}
 
-      {/* Center: dot-grid pulse animation reacting to mic level */}
       <div className="recording-stage">
-        <WaveformPulse level={rec.level} paused={rec.isPaused} />
-        <div className="recording-stage-caption">
-          {rec.isPaused
-            ? '일시정지 중 — 재개 버튼을 누르면 다시 녹음됩니다.'
-            : '녹음하는 동안 회의에 집중하세요. 종료를 누르면 전사·요약·업로드가 자동으로 진행됩니다.'}
+        <WaveformPulse
+          level={rec.level}
+          analyserRef={rec.analyserRef}
+          paused={rec.isPaused}
+        />
+      </div>
+
+      {/* Bottom dock — voice-recorder controls: status / elapsed / pause / end */}
+      <div className="recorder-dock">
+        <div className="recorder-dock-status">
+          <span className={`recorder-rec-dot ${rec.isPaused ? 'paused' : ''}`} aria-hidden />
+          <span className="recorder-rec-label">{rec.isPaused ? '일시정지' : 'REC'}</span>
+        </div>
+
+        <div className="recorder-dock-time" aria-label="elapsed">
+          {formatDuration(rec.elapsedMs)}
+        </div>
+
+        <div className="recorder-dock-controls">
+          <button
+            type="button"
+            className={`recorder-pause ${rec.isPaused ? 'is-paused' : ''}`}
+            onClick={togglePause}
+            disabled={busy}
+            aria-label={rec.isPaused ? '재개' : '일시정지'}
+            title={rec.isPaused ? '재개' : '일시정지'}
+          >
+            {rec.isPaused ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="recorder-stop"
+            onClick={stopRecording}
+            disabled={busy}
+            aria-label="회의 종료"
+            title="회의 종료"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <rect x="6" y="6" width="12" height="12" rx="1.5" />
+            </svg>
+            <span>회의 종료</span>
+          </button>
         </div>
       </div>
     </div>

@@ -79,12 +79,11 @@ export type NotionDatabase = NotionTarget
 
 export interface ModelStatus {
   whisper: boolean
-  diarization: boolean
   llm: boolean
 }
 
 export interface ModelSpec {
-  key: 'whisper' | 'llm' | 'diarization-segmentation' | 'diarization-embedding'
+  key: 'whisper' | 'llm'
   url: string
   filename: string
   approxBytes: number

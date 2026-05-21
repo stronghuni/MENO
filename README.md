@@ -2,7 +2,7 @@
 
 대면 회의를 자동으로 회의록화하는 macOS 데스크톱 앱.
 
-**녹음 → 한국어 전사 → 화자 분리 → 회의록 작성 → Notion 업로드** — 음성 처리·전사·요약 전 과정이 로컬에서 돌고, 외부로 나가는 데이터는 사용자가 켠 경우의 Notion 업로드뿐입니다. 그리고 모든 회의록에 대해 자연어로 질문할 수 있는 **로컬 LLM 채팅** 이 내장돼 있습니다.
+**녹음 → 한국어 전사 → 회의록 작성 → Notion 업로드** — 음성 처리·전사·요약 전 과정이 로컬에서 돌고, 외부로 나가는 데이터는 사용자가 켠 경우의 Notion 업로드뿐입니다. 그리고 모든 회의록에 대해 자연어로 질문할 수 있는 **로컬 LLM 채팅** 이 내장돼 있습니다.
 
 <p align="center">
   <img src="resources/icon.png" alt="MENO" width="128" />
@@ -13,7 +13,6 @@
 ## 주요 기능
 
 - **로컬 STT** — Whisper Large-v3 Turbo로 한국어 정밀 전사 (Metal GPU 가속)
-- **자동 화자 분리** — pyannote + 3D-Speaker 임베딩으로 SPK1/SPK2… 라벨
 - **회의록 자동 작성** — Qwen2.5-7B로 안건/논의/결정/액션 표준 포맷 산출. 장문은 map-reduce로 처리
 - **녹음 일시정지 / 재개**, 라우트 이동해도 살아있는 백그라운드 세션
 - **Notion 자동 업로드** — 부모 페이지 아래 자식 페이지로 회의록 추가
@@ -53,7 +52,7 @@ npx @electron/rebuild
 npm run dev
 ```
 
-설치 중 `smart-whisper`, `sherpa-onnx-node`, `better-sqlite3`, `keytar` 네이티브 빌드가 진행됩니다 (1~3분). `postinstall` 훅이 `electron-builder install-app-deps`를 자동으로 호출해 Electron ABI에 맞춥니다.
+설치 중 `smart-whisper`, `better-sqlite3`, `keytar` 네이티브 빌드가 진행됩니다 (1~3분). `postinstall` 훅이 `electron-builder install-app-deps`를 자동으로 호출해 Electron ABI에 맞춥니다.
 
 설치가 ABI 에러로 실패할 경우:
 ```bash
@@ -73,12 +72,10 @@ npx @electron/rebuild -f -w keytar
 |---|---|---|
 | `Whisper Large-v3 Turbo (GGML)` | 1.6GB | 한국어 전사 |
 | `Qwen2.5-7B-Instruct Q4_K_M (GGUF)` | 4.7GB | 회의록 작성 + 채팅 |
-| `pyannote segmentation-3.0 (ONNX)` | 6MB | 화자 분리 segmentation |
-| `3D-Speaker eres2net base (ONNX)` | 40MB | 화자 임베딩 |
 
 저장 위치 (변경 불가):
 ```
-~/Library/Application Support/meeting-notes/models/
+~/Library/Application Support/meno/models/
 ```
 
 > 다운로드 중 끊겨도 다시 실행하면 이어 받습니다 (idempotent). HuggingFace 미러를 사용하므로 별도 토큰 불필요.
@@ -116,12 +113,12 @@ npx @electron/rebuild -f -w keytar
 4. 녹음 화면은 도트 그리드 파형 애니메이션 (마이크 레벨에 반응). ⏸ 일시정지 / ⏵ 재개 / **회의 종료** 버튼
 5. 종료 누르면 자동으로 파이프라인:
    ```
-   전사 → 화자 분리 → 회의록 작성 → (자동) Notion 업로드
+   전사 → 회의록 작성 → (자동) Notion 업로드
    ```
    1시간 회의 ≈ M 시리즈 기준 약 8~12분 처리
 
 ### 회의 상세
-- 좌측 패널: 화자별 색상 구분된 **전사본**
+- 좌측 패널: **전사본**
 - 우측 패널: **회의록** (마크다운 렌더, "편집" 버튼으로 textarea 토글)
 - 상단: 제목 더블클릭으로 수정, ← 화살표로 라이브러리 복귀, **Notion에 업로드** 버튼, ⋯ 메뉴 (오디오 파일 열기, MD 내보내기, 다시 처리, 삭제)
 
@@ -143,14 +140,14 @@ npx @electron/rebuild -f -w keytar
 
 | 자료 | 경로 |
 |---|---|
-| SQLite DB | `~/Library/Application Support/meeting-notes/meetings.db` |
-| 원본 오디오 (WAV) | `~/Library/Application Support/meeting-notes/recordings/<id>.wav` |
-| 모델 | `~/Library/Application Support/meeting-notes/models/` |
-| 채팅 history | `~/Library/Application Support/meeting-notes/chat.json` |
-| 앱 설정 (테마, 자동 업로드 등) | `~/Library/Application Support/meeting-notes/settings.json` |
-| Notion 토큰 | macOS Keychain (`io.namuneulbo.meetingnotes / notion.token`) |
+| SQLite DB | `~/Library/Application Support/meno/meno.db` |
+| 원본 오디오 (WAV) | `~/Library/Application Support/meno/recordings/<id>.wav` |
+| 모델 | `~/Library/Application Support/meno/models/` |
+| 채팅 history | `~/Library/Application Support/meno/chat.json` |
+| 앱 설정 (테마, 자동 업로드 등) | `~/Library/Application Support/meno/settings.json` |
+| Notion 토큰 | macOS Keychain (`io.namuneulbo.meno / notion.token`) |
 
-> 앱 이름은 MENO지만 데이터 디렉터리는 `meeting-notes`로 유지됩니다 (이름 변경 시 기존 사용자의 데이터 보존).
+> 이전 빌드(`meeting-notes` 경로 / `io.namuneulbo.meetingnotes` 서비스)에서 업그레이드하면 첫 실행 시 디렉터리와 DB, Keychain 항목이 자동으로 이전됩니다.
 
 ---
 
@@ -195,7 +192,6 @@ src/
 │  │  ├─ wavWriter.ts             16-bit PCM WAV writer
 │  │  ├─ wavReader.ts             WAV → Float32Array decoder
 │  │  ├─ transcriber.ts           smart-whisper 래퍼 (패치된 binding)
-│  │  ├─ diarizer.ts              sherpa-onnx 래퍼
 │  │  ├─ summarizer.ts            node-llama-cpp + Qwen 공유 모델
 │  │  ├─ chat.ts                  채팅 세션 (요약과 모델 공유)
 │  │  ├─ processor.ts             종료 후 파이프라인 오케스트레이션
@@ -204,7 +200,6 @@ src/
 │  │  ├─ settings.ts              JSON 설정
 │  │  └─ downloader.ts            HuggingFace 모델 다운로드 (이어받기)
 │  └─ domain/
-│     ├─ merger.ts                전사 + 화자 매칭 (순수 함수)
 │     └─ prompts.ts               표준 회의록 프롬프트 + 청크 분할
 ├─ preload/
 │  └─ index.ts                    contextBridge로 `window.api` 노출
@@ -233,7 +228,7 @@ src/
 | Notion 페이지 모드 (DB 모드 X) | DB 만들 필요 없이 페이지 권한만 |
 | Keychain | 토큰 평문 저장 회피 |
 | SQLite + WAV 파일 | 검색 가능 + 외부 도구 접근 가능 |
-| `userData` 경로 고정 (`meeting-notes`) | 앱 이름 변경에도 데이터 보존 |
+| `userData` 경로 (`meno`) + 자동 마이그레이션 | 이전 디렉터리에서 한 번에 이전 |
 
 ---
 
@@ -262,7 +257,6 @@ mac:
 
 ## 11. 알려진 제약
 
-- 화자 분리 정확도는 마이크 1개 환경에서 약 80% — 회의 상세에서 수동 보정 가능
 - 회의 1시간 처리 시 메모리 피크 ≈ 8GB (Whisper + Qwen 동시 로드 구간)
 - `node-llama-cpp`는 첫 추론 시 플랫폼 바이너리 자동 감지/다운로드 (약 1~5초)
 - Notion API의 페이지 children은 한 번에 100개 제한 → 긴 회의록은 자동 batch 분할
@@ -274,5 +268,3 @@ mac:
 내부 사용 목적. 사용된 모델 라이선스는 각 모델 페이지를 참조하세요:
 - [openai/whisper](https://github.com/openai/whisper) (MIT)
 - [Qwen/Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) (Apache 2.0)
-- [pyannote/segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT)
-- [3D-Speaker eres2net](https://github.com/alibaba-damo-academy/3D-Speaker) (Apache 2.0)

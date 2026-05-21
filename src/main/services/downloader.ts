@@ -25,18 +25,6 @@ export const MODEL_SPECS: ModelSpec[] = [
     filename: 'qwen2.5-7b-instruct-q4_k_m.gguf',
     approxBytes: 4_683_074_240
   },
-  {
-    key: 'diarization-segmentation',
-    url: 'https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/main/model.onnx',
-    filename: 'sherpa-onnx-pyannote-segmentation-3-0.onnx',
-    approxBytes: 5_926_456
-  },
-  {
-    key: 'diarization-embedding',
-    url: 'https://huggingface.co/csukuangfj/speaker-embedding-models/resolve/main/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx',
-    filename: '3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx',
-    approxBytes: 39_593_761
-  }
 ]
 
 const active = new Map<ModelSpec['key'], AbortController>()

@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import Database from 'better-sqlite3'
 import { join } from 'path'
-import { existsSync, mkdirSync, unlinkSync } from 'fs'
+import { existsSync, mkdirSync, renameSync, unlinkSync } from 'fs'
 import { broadcast } from './broadcaster'
 import type { Meeting } from '../../shared/types'
 
@@ -25,7 +25,22 @@ export function getModelsDir(): string {
 
 export function getDb(): Database.Database {
   if (db) return db
-  const dbPath = join(app.getPath('userData'), 'meeting-notes.db')
+  const userData = app.getPath('userData')
+  const dbPath = join(userData, 'meno.db')
+  // Migrate from the previous DB filename. We also move the WAL/SHM
+  // sidecars so the new file opens cleanly with WAL still intact.
+  const legacyPath = join(userData, 'meeting-notes.db')
+  if (existsSync(legacyPath) && !existsSync(dbPath)) {
+    try {
+      renameSync(legacyPath, dbPath)
+      for (const ext of ['-shm', '-wal']) {
+        if (existsSync(legacyPath + ext)) renameSync(legacyPath + ext, dbPath + ext)
+      }
+      console.log('[migration] DB: meeting-notes.db → meno.db')
+    } catch (e) {
+      console.error('[migration] DB rename failed:', e)
+    }
+  }
   db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')

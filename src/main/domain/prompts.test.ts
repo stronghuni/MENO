@@ -19,11 +19,17 @@ describe('buildMeetingNotesPrompt', () => {
       3600000,
       segments
     )
+    expect(prompt).toContain('## 한 줄 요약')
     expect(prompt).toContain('## 주요 안건')
-    expect(prompt).toContain('## 논의 내용')
+    expect(prompt).toContain('## 논의 핵심')
     expect(prompt).toContain('## 결정 사항')
     expect(prompt).toContain('## 액션 아이템')
+    expect(prompt).toContain('## 다음 단계')
+    expect(prompt).toContain('## 미해결')
+    expect(prompt).toContain('## 리스크')
     expect(prompt).toContain('<!-- TAGS:')
+    // Anti-transcript-copy directive must be present.
+    expect(prompt).toContain('전사본을 그대로 옮겨 적지 마세요')
   })
 
   it('renders the date in YYYY-MM-DD HH:MM format', () => {

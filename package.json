@@ -1,5 +1,5 @@
 {
-  "name": "meeting-notes",
+  "name": "meno",
   "productName": "MENO",
   "version": "0.1.0",
   "description": "마이크 녹음 → 로컬 전사 → 회의록 → Notion 업로드",
@@ -34,7 +34,6 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.15.1",
     "remark-gfm": "^4.0.1",
-    "sherpa-onnx-node": "^1.13.2",
     "smart-whisper": "^0.8.1"
   },
   "devDependencies": {

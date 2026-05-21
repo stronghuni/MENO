@@ -4,9 +4,7 @@ import type { DownloadProgress, ModelSpec } from '../../../shared/types'
 
 const MODEL_LABELS: Record<ModelSpec['key'], string> = {
   whisper: 'Whisper Large-v3 Turbo (전사)',
-  llm: 'Qwen2.5-7B Q4_K_M (요약)',
-  'diarization-segmentation': 'Pyannote Segmentation (화자 분리)',
-  'diarization-embedding': '3D-Speaker Embedding (화자 분리)'
+  llm: 'Qwen2.5-7B Q4_K_M (요약)'
 }
 
 function formatBytes(b: number): string {
@@ -17,15 +15,12 @@ function formatBytes(b: number): string {
 
 interface ModelStatus {
   whisper: boolean
-  diarization: { segmentation: boolean; embedding: boolean; ready: boolean }
   llm: boolean
 }
 
 function isModelInstalled(status: ModelStatus, key: ModelSpec['key']): boolean {
   if (key === 'whisper') return status.whisper
   if (key === 'llm') return status.llm
-  if (key === 'diarization-segmentation') return status.diarization.segmentation
-  if (key === 'diarization-embedding') return status.diarization.embedding
   return false
 }
 
@@ -43,14 +38,13 @@ export default function OnboardingOverlay({
   const refresh = async (): Promise<void> => {
     const api = getApi()
     if (!api) return
-    const [s, w, d, l] = await Promise.all([
+    const [s, w, l] = await Promise.all([
       api.downloads.specs(),
       api.models.whisperInstalled(),
-      api.models.diarizationStatus(),
       api.models.llmInstalled()
     ])
     setSpecs(s)
-    setModels({ whisper: w, diarization: d, llm: l })
+    setModels({ whisper: w, llm: l })
   }
 
   useEffect(() => {
@@ -145,7 +139,7 @@ export default function OnboardingOverlay({
           <p className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
             {allDone
               ? '이제 첫 회의를 녹음할 수 있습니다.'
-              : `한국어 전사·요약을 로컬에서 처리하기 위한 4개 모델입니다. 총 약 ${formatBytes(totalBytes)}, 한 번만 받으면 됩니다.`}
+              : `한국어 전사·요약을 로컬에서 처리하기 위한 2개 모델입니다. 총 약 ${formatBytes(totalBytes)}, 한 번만 받으면 됩니다.`}
           </p>
         </header>
 

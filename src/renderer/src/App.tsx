@@ -23,15 +23,13 @@ export default function App(): React.JSX.Element {
       return
     }
     void (async (): Promise<void> => {
-      const [settings, whisper, diar, llm] = await Promise.all([
+      const [settings, whisper, llm] = await Promise.all([
         api.settings.load(),
         api.models.whisperInstalled(),
-        api.models.diarizationStatus(),
         api.models.llmInstalled()
       ])
       applyTheme(settings.theme ?? 'auto')
-      const allInstalled = whisper && llm && diar.ready
-      if (!settings.onboardingCompleted && !allInstalled) {
+      if (!settings.onboardingCompleted && !(whisper && llm)) {
         setShowOnboarding(true)
       }
       setOnboardingChecked(true)
