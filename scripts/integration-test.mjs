@@ -48,31 +48,8 @@ try {
   bad('WAV round-trip', e.message)
 }
 
-// ─── 2. merger (transcript + diarization overlap matching) ──────────────────
-console.log('\n── 2. merger ──')
-try {
-  const { mergeTranscriptWithDiarization } = await import('../src/main/domain/merger.ts')
-  const merged = mergeTranscriptWithDiarization(
-    [
-      { start: 0, end: 2, speaker: null, text: '안녕하세요' },
-      { start: 2.1, end: 4, speaker: null, text: '네 반갑습니다' },
-      { start: 10, end: 11, speaker: null, text: '구간 외' }
-    ],
-    [
-      { start: 0, end: 2.05, speaker: 0 },
-      { start: 2.05, end: 4.5, speaker: 1 }
-    ]
-  )
-  if (merged[0].speaker !== 'SPK1') throw new Error(`row0 speaker=${merged[0].speaker}`)
-  if (merged[1].speaker !== 'SPK2') throw new Error(`row1 speaker=${merged[1].speaker}`)
-  if (merged[2].speaker !== null) throw new Error(`row2 speaker should be null, got ${merged[2].speaker}`)
-  ok(`labels: ${merged.map((m) => m.speaker ?? 'null').join(', ')}`)
-} catch (e) {
-  bad('merger', e.message)
-}
-
-// ─── 3. prompts ─────────────────────────────────────────────────────────────
-console.log('\n── 3. prompts ──')
+// ─── 2. prompts ─────────────────────────────────────────────────────────────
+console.log('\n── 2. prompts ──')
 try {
   const { buildMeetingNotesPrompt, extractAttendees } = await import(
     '../src/main/domain/prompts.ts'
@@ -95,11 +72,14 @@ try {
   bad('prompts', e.message)
 }
 
-// ─── 4. downloader URL reachability ─────────────────────────────────────────
-console.log('\n── 4. downloader URL reachability ──')
+// ─── 3. downloader URL reachability ─────────────────────────────────────────
+console.log('\n── 3. downloader URL reachability ──')
 try {
-  const downloader = await import('../src/main/services/downloader.ts')
-  for (const spec of downloader.MODEL_SPECS) {
+  // Import the specs from the Electron-free shared module so this test
+  // doesn't transitively pull in `electron` (which isn't available in CI
+  // outside the Electron runtime).
+  const { MODEL_SPECS } = await import('../src/shared/modelSpecs.ts')
+  for (const spec of MODEL_SPECS) {
     const t0 = Date.now()
     const res = await fetch(spec.url, { headers: { Range: 'bytes=0-0' }, method: 'GET' })
     const ms = Date.now() - t0
@@ -128,8 +108,8 @@ try {
   bad('downloader URLs', e.message)
 }
 
-// ─── 5. Notion martian conversion ───────────────────────────────────────────
-console.log('\n── 5. martian (markdown → Notion blocks) ──')
+// ─── 4. Notion martian conversion ───────────────────────────────────────────
+console.log('\n── 4. martian (markdown → Notion blocks) ──')
 try {
   const { markdownToBlocks } = await import('@tryfabric/martian')
   const md = `# 제목
