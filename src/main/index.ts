@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu, nativeImage, protocol } from 'electron'
+import { app, shell, BrowserWindow, Menu, nativeImage, nativeTheme, protocol } from 'electron'
 import { createReadStream, existsSync, renameSync, statSync } from 'fs'
 import { join } from 'path'
 import { Readable } from 'stream'
@@ -9,6 +9,7 @@ import { buildAppMenu } from './menu'
 import { gracefulShutdown } from './services/recording'
 import { startDevBridge } from './devBridge'
 import { getMeeting } from './services/storage'
+import { loadSettings } from './services/settings'
 
 // Register `meno-audio://` as a privileged scheme so the renderer can use
 // it inside an <audio> tag and CSP allows fetching from it. Must be done
@@ -95,6 +96,14 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('io.namuneulbo.meno')
+
+  // Sync the macOS vibrancy material to the app's theme. The `vibrancy:
+  // 'sidebar'` window material follows nativeTheme, NOT our CSS theme
+  // classes — so when the OS is dark but the user forces the app to
+  // light, the sidebar stayed dark charcoal. Driving themeSource from
+  // the saved app theme makes the sidebar render light in light mode.
+  const savedTheme = loadSettings().theme
+  nativeTheme.themeSource = savedTheme === 'auto' ? 'system' : savedTheme
 
   if (process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(nativeImage.createFromPath(icon))

@@ -5,8 +5,7 @@ import {
   buildChunkSummaryPrompt,
   buildMeetingNotesPrompt,
   buildMergePrompt,
-  chunkSegmentsByTime,
-  extractAttendees
+  chunkSegmentsByTime
 } from '../domain/prompts'
 import type { TranscriptSegment } from '../../shared/types'
 
@@ -92,16 +91,17 @@ export async function summarize(
   startedAt: number,
   durationMs: number | null,
   segments: TranscriptSegment[],
+  attendees: string[] = [],
   onProgress?: (p: SummaryProgress) => void
 ): Promise<string> {
   const session = await loadSession()
   const totalChars = estimateChars(segments)
   if (totalChars <= SINGLE_PASS_CHAR_LIMIT) {
-    const prompt = buildMeetingNotesPrompt(title, startedAt, durationMs, segments)
+    const prompt = buildMeetingNotesPrompt(title, startedAt, durationMs, segments, attendees)
     const response = await session.prompt(prompt, { maxTokens: 2048 })
     return response.trim()
   }
-  return mapReduce(title, startedAt, durationMs, segments, session, onProgress)
+  return mapReduce(title, startedAt, durationMs, segments, attendees, session, onProgress)
 }
 
 async function mapReduce(
@@ -109,6 +109,7 @@ async function mapReduce(
   startedAt: number,
   durationMs: number | null,
   segments: TranscriptSegment[],
+  attendees: string[],
   session: LlamaSessionLike,
   onProgress?: (p: SummaryProgress) => void
 ): Promise<string> {
@@ -128,7 +129,8 @@ async function mapReduce(
     partials.push(out.trim())
   }
   onProgress?.({ stage: 'merge', current: chunks.length, total: chunks.length })
-  const attendees = extractAttendees(segments)
+  // Attendees come from the user's new-meeting form, not from the
+  // transcript (no diarization). Pass them through verbatim.
   const mergePrompt = buildMergePrompt(title, startedAt, durationMs, attendees, partials)
   const final = await session.prompt(mergePrompt, { maxTokens: 2048 })
   return final.trim()

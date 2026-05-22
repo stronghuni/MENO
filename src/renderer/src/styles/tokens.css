@@ -2,9 +2,9 @@
   color-scheme: light dark;
 
   /* Neutral palette — very slight warm cast for paper-like feel (not stark cool) */
-  --bg: #ffffff;
-  --bg-soft: #fafaf9;
-  --bg-sunk: #f5f5f4;
+  --bg: #fbfbf9;
+  --bg-soft: #f5f6f8;
+  --bg-sunk: #eef0f4;
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-active: rgba(0, 0, 0, 0.06);
   --bg-translucent-card: rgba(255, 255, 255, 0.72);
@@ -13,16 +13,16 @@
   --border-strong: rgba(0, 0, 0, 0.14);
   --border-sidebar: rgba(0, 0, 0, 0.06);
 
-  --text: #18181b;
+  --text: #16263a;
   --text-muted: #52525b;
   --text-faint: #a1a1aa;
   --text-inverse: #ffffff;
 
   /* Accent: a confident, slightly desaturated indigo that reads serious */
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.08);
-  --accent-soft-strong: rgba(37, 99, 235, 0.14);
+  --accent: #2d5bd0;
+  --accent-hover: #2249b0;
+  --accent-soft: rgba(45, 91, 208, 0.1);
+  --accent-soft-strong: rgba(45, 91, 208, 0.16);
 
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.08);
@@ -33,10 +33,10 @@
 
   --warn: #d97706;
 
-  /* Radius — match macOS rhythm: 6px small, 10px medium, 14px cards */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  /* Radius — generous rounding echoes the mascot's soft curves */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -50,6 +50,12 @@
     "Segoe UI", system-ui, sans-serif;
   --font-mono:
     "SF Mono", ui-monospace, "JetBrains Mono", "Menlo", "Consolas", monospace;
+  /* Display — SF Pro Rounded (ui-rounded) carries the mascot's friendly,
+     calm character on titles and headings. Native + zero-load; Korean
+     falls back to Apple SD Gothic Neo / Pretendard. */
+  --font-display:
+    ui-rounded, "SF Pro Rounded", -apple-system, "Apple SD Gothic Neo",
+    "Pretendard Variable", Pretendard, sans-serif;
   /* Tighter tracking for headlines feels more native on macOS */
   --tracking-tight: -0.011em;
   --tracking-display: -0.022em;
@@ -96,23 +102,23 @@ html.is-electron body {
 }
 
 html.theme-dark {
-  --bg: #1c1c1e;
-  --bg-soft: #242425;
-  --bg-sunk: #19191a;
+  --bg: #181b22;
+  --bg-soft: #20242c;
+  --bg-sunk: #14171d;
   --bg-hover: rgba(255, 255, 255, 0.06);
   --bg-active: rgba(255, 255, 255, 0.08);
-  --bg-translucent-card: rgba(30, 30, 32, 0.72);
+  --bg-translucent-card: rgba(32, 38, 50, 0.72);
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.18);
   --border-sidebar: rgba(255, 255, 255, 0.08);
-  --text: #f4f4f5;
-  --text-muted: #a1a1aa;
-  --text-faint: #71717a;
+  --text: #eaf0f8;
+  --text-muted: #a6b0c0;
+  --text-faint: #6a7484;
   --text-inverse: #18181b;
-  --accent: #60a5fa;
-  --accent-hover: #3b82f6;
-  --accent-soft: rgba(96, 165, 250, 0.16);
-  --accent-soft-strong: rgba(96, 165, 250, 0.24);
+  --accent: #5b8ef0;
+  --accent-hover: #6f9ef5;
+  --accent-soft: rgba(91, 142, 240, 0.16);
+  --accent-soft-strong: rgba(91, 142, 240, 0.24);
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.16);
   --danger-hover: #ef4444;
@@ -126,23 +132,23 @@ html.theme-dark {
 }
 
 html.theme-light {
-  --bg: #ffffff;
-  --bg-soft: #fafaf9;
-  --bg-sunk: #f5f5f4;
+  --bg: #fbfbf9;
+  --bg-soft: #f5f6f8;
+  --bg-sunk: #eef0f4;
   --bg-hover: rgba(0, 0, 0, 0.04);
   --bg-active: rgba(0, 0, 0, 0.06);
   --bg-translucent-card: rgba(255, 255, 255, 0.72);
   --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.14);
   --border-sidebar: rgba(0, 0, 0, 0.06);
-  --text: #18181b;
+  --text: #16263a;
   --text-muted: #52525b;
   --text-faint: #a1a1aa;
   --text-inverse: #ffffff;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.08);
-  --accent-soft-strong: rgba(37, 99, 235, 0.14);
+  --accent: #2d5bd0;
+  --accent-hover: #2249b0;
+  --accent-soft: rgba(45, 91, 208, 0.1);
+  --accent-soft-strong: rgba(45, 91, 208, 0.16);
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.08);
   --danger-hover: #b91c1c;
@@ -157,26 +163,28 @@ html.theme-light {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1c1e;
-    --bg-soft: #242425;
-    --bg-sunk: #19191a;
+    /* MUST mirror html.theme-dark exactly — auto mode (OS dark) and
+       explicit dark mode have to look identical. */
+    --bg: #181b22;
+    --bg-soft: #20242c;
+    --bg-sunk: #14171d;
     --bg-hover: rgba(255, 255, 255, 0.06);
     --bg-active: rgba(255, 255, 255, 0.08);
-    --bg-translucent-card: rgba(30, 30, 32, 0.72);
+    --bg-translucent-card: rgba(32, 38, 50, 0.72);
 
     --border: rgba(255, 255, 255, 0.1);
     --border-strong: rgba(255, 255, 255, 0.18);
     --border-sidebar: rgba(255, 255, 255, 0.08);
 
-    --text: #f4f4f5;
-    --text-muted: #a1a1aa;
-    --text-faint: #71717a;
+    --text: #eaf0f8;
+    --text-muted: #a6b0c0;
+    --text-faint: #6a7484;
     --text-inverse: #18181b;
 
-    --accent: #60a5fa;
-    --accent-hover: #3b82f6;
-    --accent-soft: rgba(96, 165, 250, 0.16);
-    --accent-soft-strong: rgba(96, 165, 250, 0.24);
+    --accent: #5b8ef0;
+    --accent-hover: #6f9ef5;
+    --accent-soft: rgba(91, 142, 240, 0.16);
+    --accent-soft-strong: rgba(91, 142, 240, 0.24);
 
     --danger: #f87171;
     --danger-soft: rgba(248, 113, 113, 0.16);
@@ -203,6 +211,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Rounded display face on titles + brand — the mascot's calm voice.
+   Body text stays in the native sans for Korean readability. */
+h1,
+h2,
+h3,
+.sidebar-brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
 }
 
 button {

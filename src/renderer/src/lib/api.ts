@@ -126,7 +126,9 @@ function buildHttpApi(): WindowApi {
     },
     shell: {
       openPath: (path: string) => invoke('shell:openPath', path),
-      exportNotes: (id: string) => invoke('shell:exportNotes', id)
+      exportNotes: (id: string, format: 'md' | 'docx') =>
+        invoke('shell:exportNotes', id, format),
+      downloadAudio: (id: string) => invoke('shell:downloadAudio', id)
     },
     chat: {
       history: () => invoke('chat:history'),

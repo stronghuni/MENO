@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import appIcon from '../assets/app-icon.png'
 import { getApi } from '../lib/api'
-import { applyTheme, resolveEffective } from '../lib/theme'
+import { applyTheme } from '../lib/theme'
 import { useRecording } from '../contexts/RecordingContext'
 import type { Meeting, ThemeMode } from '../../../shared/types'
 
@@ -67,6 +67,26 @@ function MoonIcon(): React.JSX.Element {
   )
 }
 
+// Lucide-style "contrast" icon — a circle with one half filled. Signals
+// "follow the system" for the auto theme state.
+function AutoIcon(): React.JSX.Element {
+  return (
+    <svg
+      className="nav-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 export default function Sidebar(): React.JSX.Element {
   const [recent, setRecent] = useState<Meeting[]>([])
   const [theme, setTheme] = useState<ThemeMode>('auto')
@@ -95,7 +115,6 @@ export default function Sidebar(): React.JSX.Element {
     if (api) await api.settings.save({ theme: next })
   }
 
-  const effective = resolveEffective(theme)
   const label = theme === 'auto' ? '자동 (OS)' : theme === 'dark' ? '다크모드' : '라이트모드'
 
   return (
@@ -190,8 +209,8 @@ export default function Sidebar(): React.JSX.Element {
         className="theme-toggle"
         title={`현재: ${label} — 클릭하면 ${theme === 'auto' ? '다크' : theme === 'dark' ? '라이트' : '자동'} 모드`}
       >
-        {effective === 'dark' ? <MoonIcon /> : <SunIcon />}
-        <span>다크모드</span>
+        {theme === 'auto' ? <AutoIcon /> : theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+        <span>{label}</span>
       </button>
     </nav>
   )

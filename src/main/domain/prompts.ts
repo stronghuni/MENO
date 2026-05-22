@@ -11,11 +11,15 @@ function formatTimestamp(s: number): string {
 }
 
 function formatTranscript(segments: TranscriptSegment[]): string {
+  // No diarization → segments carry no speaker. Emit `[mm:ss] text`
+  // without any speaker label so the model never sees (and never
+  // invents) "SPK1/SPK2" tags. When a label does exist (future), include it.
   return segments
-    .map((s) => {
-      const speaker = s.speaker ?? '미상'
-      return `[${formatTimestamp(s.start)}] ${speaker}: ${s.text}`
-    })
+    .map((s) =>
+      s.speaker
+        ? `[${formatTimestamp(s.start)}] ${s.speaker}: ${s.text}`
+        : `[${formatTimestamp(s.start)}] ${s.text}`
+    )
     .join('\n')
 }
 
@@ -45,7 +49,10 @@ const MEETING_TEMPLATE = (
   dateStr: string,
   durationStr: string,
   attendeesLine: string
-): string => `# ${title}
+): string => {
+  // Keep the 참석자 row always, but leave the value blank when unknown
+  // (no "미상"). attendeesLine is '' when there are no attendees.
+  return `# ${title}
 
 - **일시**: ${dateStr} (${durationStr})
 - **참석자**: ${attendeesLine}
@@ -62,7 +69,7 @@ const MEETING_TEMPLATE = (
 
 ### {안건명}
 - **쟁점**: 이 안건의 핵심 질문이나 결정 포인트 한 문장
-- **주요 관점**: 누가 어떤 입장을 취했고 그 근거가 무엇이었는지 (2~4줄)
+- **논의 요지**: 어떤 의견·근거가 오갔는지 종합 (2~4줄). 전사본에 실명이 명시된 경우만 그 이름을 쓰고, 아니면 발언자를 특정하지 말 것
 - **합의 / 결론**: 이 안건에서 어디까지 진전됐는지 (합의됐으면 결정 사항에 다시 적기)
 
 (각 안건마다 위 블록을 반복)
@@ -77,7 +84,7 @@ const MEETING_TEMPLATE = (
 ## 액션 아이템
 | 담당 | 할 일 | 기한 | 우선순위 |
 |------|------|-----|---------|
-| (한 사람 이름 또는 SPKx) | (구체적 동사로 시작) | (YYYY-MM-DD 또는 "다음 회의 전") | 높음/보통/낮음 |
+| (담당자 이름. 전사본에서 분명하지 않으면 "미정") | (구체적 동사로 시작) | (YYYY-MM-DD 또는 "다음 회의 전") | 높음/보통/낮음 |
 
 (없으면 "없음"이라고 한 줄)
 
@@ -91,38 +98,43 @@ const MEETING_TEMPLATE = (
 - (회의에서 명시적으로 언급된 위험만. 없으면 "언급된 리스크 없음")
 
 <!-- TAGS: 키워드1, 키워드2, 키워드3 -->`
+}
 
 const COMMON_RULES = `규칙 (반드시 지킬 것):
 1. 한국어 존댓말로 작성하세요.
-2. **절대로 전사본을 그대로 옮겨 적지 마세요.** "SPK1: ...", "SPK2: ..." 같은 발언 인용 형태는 어디에도 넣지 마세요. 회의록은 안건별로 묶어 종합한 결과물입니다.
-   - ❌ 잘못된 예: "- SPK1: 그러면 다음주에 합시다."
-   - ✅ 올바른 예: "- 일정을 다음주로 미루기로 합의 (SPK1 제안, 전원 동의)"
+2. **절대로 전사본을 그대로 옮겨 적지 마세요.** 회의록은 안건별로 묶어 종합한 결과물입니다.
+   - ❌ 잘못된 예: "- 그러면 다음주에 합시다."
+   - ✅ 올바른 예: "- 일정을 다음주로 미루기로 합의"
 3. 회의에 등장하지 않은 내용을 만들어내지 마세요. 추측은 금지입니다.
 4. 명확히 합의되지 않은 사항은 "결정 사항"이 아닌 "논의 핵심" 또는 "미해결" 칸으로.
 5. 짧은 발언 ("맞아요", "네", "야" 등 추임새)은 회의록에서 빼고 의미 있는 내용만 종합하세요.
-6. 화자 이름은 SPK1/SPK2 그대로 사용. 회의 중 본명이 등장하면 그 이름을 우선.
+6. **이 전사본에는 화자 구분이 없습니다.** SPK1/SPK2 같은 화자 라벨을 절대 만들어내지 마세요. 참석자는 위 헤더의 "참석자" 줄에 주어진 명단만 사용하고, 명단이 비어 있으면 "참석자:" 줄은 그대로 두되 값을 비워두세요("미상" 같은 표기 금지). 전사본에 실명이 직접 등장하지 않는 한 특정 발언을 누구에게 귀속시키지 마세요.
 7. 빈 섹션이라도 헤더는 유지하고 "없음" 또는 "언급되지 않음"으로 명시하세요.
 8. 마지막 \`<!-- TAGS: ... -->\` 주석에 회의를 대표하는 한국어 명사 3~5개를 쉼표로 (예: 제품, 로드맵, 마케팅).
-9. 회의록 마크다운만 출력하세요. 설명·인사·코드블록 금지.`
+9. 회의록 마크다운만 출력하세요. 설명·인사·코드블록 금지.
+10. **전사 내용이 인사말·잡담뿐이거나 의미 있는 논의가 없으면, 각 섹션을 "논의된 내용 없음"으로 채우고 절대 가짜 안건·참석자·결정을 지어내지 마세요.**`
 
 export function buildMeetingNotesPrompt(
   title: string,
   startedAt: number,
   durationMs: number | null,
-  segments: TranscriptSegment[]
+  segments: TranscriptSegment[],
+  attendees: string[] = []
 ): string {
   const date = new Date(startedAt)
   const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
   const durationStr = durationMs
     ? `${Math.floor(durationMs / 60000)}분 ${Math.floor((durationMs % 60000) / 1000)}초`
     : '—'
+  const attendeesLine = attendees.length > 0 ? attendees.join(', ') : ''
 
   return `당신은 회의 전사본을 분석해 임원 보고용 회의록을 작성하는 전문 회의 서기입니다.
 당신의 회의록은 회의에 참석하지 못한 사람이 30초 안에 핵심을 파악할 수 있어야 합니다.
 
 다음 전사본을 분석해서 아래 형식의 마크다운 회의록을 작성하세요.
+${attendeesLine ? '"참석자" 줄은 아래 주어진 명단을 그대로 사용하고 임의로 바꾸지 마세요.' : '"참석자" 줄은 그대로 두되 값은 비워두세요. "미상" 같은 텍스트를 넣지 마세요.'}
 
-${MEETING_TEMPLATE(title, dateStr, durationStr, '전사본에 등장한 화자 (SPK1, SPK2…)')}
+${MEETING_TEMPLATE(title, dateStr, durationStr, attendeesLine)}
 
 ${COMMON_RULES}
 
@@ -228,7 +240,7 @@ export function buildMergePrompt(
   const durationStr = durationMs
     ? `${Math.floor(durationMs / 60000)}분 ${Math.floor((durationMs % 60000) / 1000)}초`
     : '—'
-  const attendeesStr = attendees.length > 0 ? attendees.join(', ') : '미상'
+  const attendeesStr = attendees.length > 0 ? attendees.join(', ') : ''
   const numbered = chunkSummaries.map((s, i) => `## 구간 ${i + 1}\n${s.trim()}`).join('\n\n')
 
   return `당신은 회의 구간별 요약을 통합해 임원 보고용 최종 회의록을 작성하는 전문 회의 서기입니다.

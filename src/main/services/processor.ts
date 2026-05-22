@@ -81,6 +81,34 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
         finalAttendees.length > 0 ? JSON.stringify(finalAttendees) : null
     })
 
+    // Guard against hallucinated notes from a trivially short transcript.
+    // A 7B model handed a near-empty transcript ("안녕하세요") plus our
+    // full section template will confabulate an entire fake meeting
+    // (invented speakers, agenda, decisions). Below a minimum amount of
+    // real transcript text we skip summarization entirely and leave an
+    // honest note instead.
+    //
+    // Measure UNIQUE content, not raw length: Whisper loops on near-silence
+    // and emits the same line ("안녕하세요") dozens of times, which clears a
+    // raw-character gate while carrying zero real information. Dedup the
+    // segment texts before counting so repetitive junk is caught too.
+    const transcriptChars = [...new Set(segments.map((s) => s.text.trim()))].join('').length
+    const MIN_SUMMARY_CHARS = 40
+    if (transcriptChars < MIN_SUMMARY_CHARS) {
+      updateMeeting(meetingId, {
+        notesMd:
+          '전사된 내용이 충분하지 않아 회의록을 생성하지 않았습니다. (녹음이 너무 짧거나 음성이 거의 없었습니다.)',
+        tagsJson: null
+      })
+      broadcast({
+        meetingId,
+        stage: 'done',
+        message: '전사 내용이 부족하여 회의록을 생성하지 않았습니다.',
+        partialSegments: segments
+      })
+      return
+    }
+
     if (isLlmInstalled()) {
       broadcast({ meetingId, stage: 'summarizing', message: '회의록 작성 중…' })
       try {
@@ -91,6 +119,7 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
             meeting.startedAt,
             meeting.durationMs,
             segments,
+            finalAttendees,
             (p) => {
               const msg =
                 p.stage === 'chunk'

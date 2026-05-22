@@ -148,14 +148,6 @@ export default function MeetingDetail(): React.JSX.Element {
       notesDirty.current = false
     })
 
-  const reprocess = (): Promise<void> =>
-    runAction(async () => {
-      if (!id) return
-      const api = getApi()
-      if (!api) return
-      await api.processing.reprocess(id)
-    })
-
   const deleteMeeting = (): Promise<void> =>
     runAction(async () => {
       if (!id) return
@@ -166,28 +158,21 @@ export default function MeetingDetail(): React.JSX.Element {
       navigate('/library')
     })
 
-  const openAudio = (): Promise<void> =>
+  const downloadAudio = (): Promise<void> =>
     runAction(async () => {
-      if (!meeting?.audioPath) return
+      if (!id || !meeting?.audioPath) return
       const api = getApi()
       if (!api) return
-      await api.shell.openPath(meeting.audioPath)
+      await api.shell.downloadAudio(id)
     })
 
-  const exportNotes = (): Promise<void> =>
+  const exportNotes = (format: 'md' | 'docx'): Promise<void> =>
     runAction(async () => {
       if (!id) return
       const api = getApi()
       if (!api) return
-      await api.shell.exportNotes(id)
+      await api.shell.exportNotes(id, format)
     })
-
-  const processing = !!(
-    status &&
-    status.stage !== 'idle' &&
-    status.stage !== 'done' &&
-    status.stage !== 'error'
-  )
 
   return (
     <div className="main">
@@ -260,19 +245,17 @@ export default function MeetingDetail(): React.JSX.Element {
             disabled={!meeting}
             items={[
               {
-                label: '오디오 파일 열기',
+                label: '오디오 파일 다운로드',
                 disabled: !meeting?.audioPath,
-                onClick: openAudio
+                onClick: downloadAudio
               },
               {
-                label: '회의록 내보내기 (.md)',
+                label: '회의록 내보내기',
                 disabled: !meeting?.notesMd,
-                onClick: exportNotes
-              },
-              {
-                label: '다시 처리 (전사/요약)',
-                disabled: !meeting?.audioPath || processing,
-                onClick: reprocess
+                submenu: [
+                  { label: 'Markdown (.md)', onClick: () => exportNotes('md') },
+                  { label: 'Word 문서 (.docx)', onClick: () => exportNotes('docx') }
+                ]
               },
               { separator: true },
               {
@@ -459,7 +442,7 @@ export default function MeetingDetail(): React.JSX.Element {
                   ) : (
                     <div className="muted" style={{ fontSize: 13 }}>
                       {meeting.transcriptJson
-                        ? '회의록이 아직 생성되지 않았습니다. 우측 ⋯ 메뉴의 "다시 처리"를 눌러 주세요.'
+                        ? '회의록이 아직 생성되지 않았습니다.'
                         : '아직 전사가 없습니다. 종료 후 자동으로 회의록이 작성됩니다.'}
                     </div>
                   )}
@@ -508,7 +491,27 @@ interface MenuItem {
   disabled?: boolean
   danger?: boolean
   separator?: boolean
+  /** When present, the row opens a nested flyout on hover/click instead
+   *  of firing onClick. */
+  submenu?: { label: string; onClick: () => void }[]
 }
+
+const ROW_STYLE = (item: { disabled?: boolean; danger?: boolean }): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 10,
+  width: '100%',
+  textAlign: 'left',
+  padding: '6px 10px',
+  fontSize: 13,
+  border: 'none',
+  background: 'transparent',
+  color: item.danger ? 'var(--danger)' : 'var(--text)',
+  cursor: item.disabled ? 'not-allowed' : 'pointer',
+  opacity: item.disabled ? 0.4 : 1,
+  borderRadius: 'var(--radius-sm)'
+})
 
 function MenuButton({
   items,
@@ -518,15 +521,24 @@ function MenuButton({
   disabled?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
+  const [openSub, setOpenSub] = useState<number | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
     const onClick = (e: MouseEvent): void => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+      if (!ref.current?.contains(e.target as Node)) {
+        setOpen(false)
+        setOpenSub(null)
+      }
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
   }, [open])
+
+  const close = (): void => {
+    setOpen(false)
+    setOpenSub(null)
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -545,7 +557,7 @@ function MenuButton({
             position: 'absolute',
             top: 'calc(100% + 4px)',
             right: 0,
-            minWidth: 180,
+            minWidth: 200,
             background: 'var(--bg)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
@@ -555,34 +567,89 @@ function MenuButton({
             animation: 'fade-up 0.14s var(--ease-out)'
           }}
         >
-          {items.map((item, i) =>
-            item.separator ? (
-              <div key={i} style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
-            ) : (
+          {items.map((item, i) => {
+            if (item.separator) {
+              return (
+                <div key={i} style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+              )
+            }
+            if (item.submenu) {
+              return (
+                <div
+                  key={i}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => !item.disabled && setOpenSub(i)}
+                  onMouseLeave={() => setOpenSub((cur) => (cur === i ? null : cur))}
+                >
+                  <button
+                    type="button"
+                    disabled={item.disabled}
+                    onClick={() => !item.disabled && setOpenSub((cur) => (cur === i ? null : i))}
+                    style={ROW_STYLE(item)}
+                    onMouseEnter={(e) => {
+                      if (item.disabled) return
+                      e.currentTarget.style.background = 'var(--bg-hover)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    <span>{item.label}</span>
+                    <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>›</span>
+                  </button>
+                  {openSub === i && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: -4,
+                        right: 'calc(100% + 4px)',
+                        minWidth: 180,
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        padding: 4,
+                        boxShadow: 'var(--shadow)',
+                        zIndex: 11,
+                        animation: 'fade-up 0.12s var(--ease-out)'
+                      }}
+                    >
+                      {item.submenu.map((sub, j) => (
+                        <button
+                          key={j}
+                          type="button"
+                          onClick={() => {
+                            close()
+                            sub.onClick()
+                          }}
+                          style={ROW_STYLE({})}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--bg-hover)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent'
+                          }}
+                        >
+                          <span>{sub.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            return (
               <button
                 key={i}
                 onClick={() => {
-                  setOpen(false)
+                  close()
                   item.onClick?.()
                 }}
                 disabled={item.disabled}
-                className="btn-ghost"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '6px 10px',
-                  fontSize: 13,
-                  border: 'none',
-                  background: 'transparent',
-                  color: item.danger ? 'var(--danger)' : 'var(--text)',
-                  cursor: item.disabled ? 'not-allowed' : 'pointer',
-                  opacity: item.disabled ? 0.4 : 1,
-                  borderRadius: 'var(--radius-sm)'
-                }}
+                style={ROW_STYLE(item)}
                 onMouseEnter={(e) => {
                   if (item.disabled) return
                   e.currentTarget.style.background = 'var(--bg-hover)'
+                  setOpenSub(null)
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent'
@@ -591,7 +658,7 @@ function MenuButton({
                 {item.label}
               </button>
             )
-          )}
+          })}
         </div>
       )}
     </div>

@@ -94,8 +94,10 @@ const api = {
   },
   shell: {
     openPath: (path: string): Promise<string> => ipcRenderer.invoke('shell:openPath', path),
-    exportNotes: (meetingId: string): Promise<string | null> =>
-      ipcRenderer.invoke('shell:exportNotes', meetingId)
+    exportNotes: (meetingId: string, format: 'md' | 'docx'): Promise<string | null> =>
+      ipcRenderer.invoke('shell:exportNotes', meetingId, format),
+    downloadAudio: (meetingId: string): Promise<string | null> =>
+      ipcRenderer.invoke('shell:downloadAudio', meetingId)
   },
   chat: {
     history: (): Promise<ChatMessage[]> => ipcRenderer.invoke('chat:history'),

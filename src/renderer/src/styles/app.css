@@ -7,7 +7,8 @@
 /* ── Sidebar ────────────────────────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-width);
-  background: transparent;
+  /* Default (fallback / non-Electron): solid sunk tone. */
+  background: var(--bg-sunk);
   border-right: 1px solid var(--border-sidebar);
   display: flex;
   flex-direction: column;
@@ -16,6 +17,18 @@
   /* Make the entire sidebar draggable so the window can be moved from any
      blank area, while interactive children opt back out below. */
   -webkit-app-region: drag;
+}
+
+/* In Electron the window vibrancy shows through. We wash a translucent
+   tint over it so the macOS frosted-gray material reads as clean warm
+   paper (light) or soft navy-dark (dark) instead of muddy charcoal —
+   keeping the see-through depth, dropping the gray cast. */
+html.is-electron .sidebar { background: rgba(255, 255, 255, 0.34); }
+html.is-electron.theme-light .sidebar { background: rgba(255, 255, 255, 0.42); }
+html.is-electron.theme-dark .sidebar { background: rgba(18, 21, 28, 0.34); }
+@media (prefers-color-scheme: dark) {
+  html.is-electron .sidebar { background: rgba(18, 21, 28, 0.34); }
+  html.is-electron.theme-light .sidebar { background: rgba(255, 255, 255, 0.42); }
 }
 
 .sidebar > *:not(.sidebar-spacer) {
@@ -75,19 +88,20 @@
 }
 
 .nav-link:hover {
-  background: rgba(0, 0, 0, 0.035);
+  background: var(--bg-hover);
   color: var(--text);
   text-decoration: none;
 }
 
 .nav-link.active,
 .nav-link.active:hover {
-  background: rgba(255, 255, 255, 0.85);
+  /* Theme-aware frosted pill — was hardcoded white, which glared in
+     dark mode. The translucent card material adapts to light/dark. */
+  background: var(--bg-translucent-card);
   color: var(--text);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
     0 1px 2px rgba(0, 0, 0, 0.05),
-    0 0 0 0.5px rgba(0, 0, 0, 0.04);
+    0 0 0 0.5px var(--border);
 }
 
 .nav-link .nav-dot {
@@ -114,9 +128,14 @@
   flex-shrink: 0;
 }
 
-.nav-link:hover .nav-icon,
-.nav-link.active .nav-icon {
+.nav-link:hover .nav-icon {
   color: var(--text-muted);
+}
+
+/* Active item's icon picks up the pencil-blue accent — ties the
+   selected nav row to the brand color. */
+.nav-link.active .nav-icon {
+  color: var(--accent);
 }
 
 .nav-recent {

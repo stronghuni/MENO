@@ -84,8 +84,11 @@ export default function NewMeeting(): React.JSX.Element {
         <header className="main-header">
           <h1>새 회의</h1>
         </header>
-        <div className="main-content">
-          <div style={{ maxWidth: 480, margin: '24px auto 0', display: 'grid', gap: 18 }}>
+        <div
+          className="main-content"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ width: '100%', maxWidth: 480, margin: 'auto', display: 'grid', gap: 18 }}>
             <header style={{ textAlign: 'center', display: 'grid', gap: 6, marginBottom: 4 }}>
               <h2 style={{ fontSize: 22, fontWeight: 600 }}>새 회의 녹음</h2>
               <p className="muted" style={{ fontSize: 13 }}>

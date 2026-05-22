@@ -9,6 +9,7 @@
  * layer — handlers see only the user-supplied args.
  */
 
+import { nativeTheme } from 'electron'
 import {
   createMeeting,
   deleteMeeting,
@@ -28,12 +29,13 @@ import { getProcessingStatus, processRecording } from './services/processor'
 import { isModelInstalled } from './services/transcriber'
 import { isLlmInstalled } from './services/summarizer'
 import { clearChatHistory, getChatHistory, sendMessage } from './services/chat'
+import { markdownToDocxBuffer } from './services/docxExport'
 import { deleteSecret, getSecret, hasSecret, setSecret, SecretKey } from './services/keychain'
 import { loadSettings, saveSettings, Settings } from './services/settings'
 import { searchDatabases, uploadMeeting } from './services/notion'
 import { cancelDownload, downloadModel, MODEL_SPECS, ModelSpec } from './services/downloader'
 import { dialog, shell } from 'electron'
-import { writeFileSync } from 'fs'
+import { copyFileSync, existsSync, writeFileSync } from 'fs'
 import type { Meeting, RecordingStartParams } from '../shared/types'
 
 export type Handler = (...args: unknown[]) => unknown
@@ -81,7 +83,17 @@ export const handlers: Record<string, Handler> = {
   'secrets:delete': (key) => deleteSecret(key as SecretKey),
   'secrets:has': (key) => hasSecret(key as SecretKey),
   'settings:load': () => loadSettings(),
-  'settings:save': (patch) => saveSettings(patch as Partial<Settings>),
+  'settings:save': (patch) => {
+    const p = patch as Partial<Settings>
+    const next = saveSettings(p)
+    // Keep the native vibrancy material in step with the app theme so
+    // the sidebar isn't dark charcoal in light mode (vibrancy follows
+    // nativeTheme, not our CSS classes).
+    if (p.theme) {
+      nativeTheme.themeSource = p.theme === 'auto' ? 'system' : p.theme
+    }
+    return next
+  },
 
   // ── notion ────────────────────────────────────────────────────────────
   'notion:databases': () => searchDatabases(),
@@ -103,20 +115,44 @@ export const handlers: Record<string, Handler> = {
 
   // ── shell ─────────────────────────────────────────────────────────────
   'shell:openPath': (path) => shell.openPath(path as string),
-  'shell:exportNotes': async (meetingId) => {
+  'shell:downloadAudio': async (meetingId) => {
     const meeting = getMeeting(meetingId as string)
-    if (!meeting?.notesMd) throw new Error('회의록이 없습니다.')
+    if (!meeting?.audioPath || !existsSync(meeting.audioPath)) {
+      throw new Error('오디오 파일이 없습니다.')
+    }
     const safeTitle = meeting.title.replace(/[/\\?%*:|"<>]/g, '-').slice(0, 80)
     const result = await dialog.showSaveDialog({
-      title: '회의록 저장',
-      defaultPath: `${safeTitle}.md`,
+      title: '오디오 파일 다운로드',
+      defaultPath: `${safeTitle}.wav`,
       filters: [
-        { name: 'Markdown', extensions: ['md'] },
+        { name: 'WAV 오디오', extensions: ['wav'] },
         { name: '모든 파일', extensions: ['*'] }
       ]
     })
     if (result.canceled || !result.filePath) return null
-    writeFileSync(result.filePath, meeting.notesMd, 'utf-8')
+    copyFileSync(meeting.audioPath, result.filePath)
+    return result.filePath
+  },
+  'shell:exportNotes': async (meetingId, format) => {
+    const meeting = getMeeting(meetingId as string)
+    if (!meeting?.notesMd) throw new Error('회의록이 없습니다.')
+    const fmt = format === 'docx' ? 'docx' : 'md'
+    const safeTitle = meeting.title.replace(/[/\\?%*:|"<>]/g, '-').slice(0, 80)
+    const result = await dialog.showSaveDialog({
+      title: '회의록 내보내기',
+      defaultPath: `${safeTitle}.${fmt}`,
+      filters:
+        fmt === 'docx'
+          ? [{ name: 'Word 문서 (.docx)', extensions: ['docx'] }]
+          : [{ name: 'Markdown (.md)', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    if (fmt === 'docx') {
+      const buf = await markdownToDocxBuffer(meeting.notesMd, meeting.title)
+      writeFileSync(result.filePath, buf)
+    } else {
+      writeFileSync(result.filePath, meeting.notesMd, 'utf-8')
+    }
     return result.filePath
   }
 }

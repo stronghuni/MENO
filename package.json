@@ -29,6 +29,7 @@
     "@notionhq/client": "^5.22.0",
     "@tryfabric/martian": "^1.2.4",
     "better-sqlite3": "^12.10.0",
+    "docx": "^9.6.1",
     "keytar": "^7.9.0",
     "node-llama-cpp": "^3.18.1",
     "react-markdown": "^10.1.0",
