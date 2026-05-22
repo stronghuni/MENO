@@ -161,6 +161,20 @@ export function extractTags(notesMd: string): { tags: string[]; cleanedNotes: st
   return { tags, cleanedNotes }
 }
 
+/**
+ * Deterministically force the "참석자" line to the form-provided attendee
+ * list (blank when none). The single-pass prompt obeys this, but the
+ * long-meeting map-reduce path occasionally lets the model write "미상" or
+ * invent names despite the rule — so we rewrite the line after generation
+ * regardless of which path produced the notes.
+ */
+export function enforceAttendeesLine(notesMd: string, attendees: string[]): string {
+  const value = attendees.length > 0 ? attendees.join(', ') : ''
+  return notesMd.replace(/^(\s*[-*]\s*\*\*참석자\*\*\s*:).*$/m, (_m, prefix: string) =>
+    value ? `${prefix} ${value}` : prefix
+  )
+}
+
 export interface ExtractedKeywords {
   tags: string[]
   attendees: string[]
@@ -197,13 +211,13 @@ export function buildChunkSummaryPrompt(
 - 안건명 / 핵심 질문 한 줄
 
 ### 논의 핵심
-- **{안건명}**: 쟁점은 X. {화자A}는 Y 입장, {화자B}는 Z 우려. 합의 방향: W (또는 "미합의")
+- **(안건명)**: 쟁점은 무엇이고 어떤 의견·근거가 오갔는지 1~2줄로 종합. 합의 방향: (합의 내용 또는 "미합의")
 
 ### 결정
 - 명시적으로 결정·합의된 사항만 (없으면 "없음")
 
 ### 액션 아이템
-- {담당}: {구체적 동사로 시작} (기한 있으면 YYYY-MM-DD 또는 "다음 회의 전")
+- (담당자, 불분명하면 "미정"): (구체적 동사로 시작) (기한 있으면 YYYY-MM-DD 또는 "다음 회의 전")
 
 ### 미해결 / 이월
 - 결론 안 난 안건이나 추가 정보 필요한 질문
@@ -213,10 +227,11 @@ export function buildChunkSummaryPrompt(
 
 규칙:
 1. 한국어 존댓말, 짧고 명확한 불릿
-2. **전사본 발언("SPK1: ...")을 그대로 옮기지 마세요.** 안건별로 종합·정리합니다.
-3. 추임새, 짧은 응답("맞아요", "네") 등은 무시
-4. 이 구간에 명시되지 않은 내용을 만들어내지 마세요
-5. 위 마크다운만 출력하세요
+2. **전사본 발언을 그대로 옮기지 마세요.** 안건별로 종합·정리합니다.
+3. **이 전사본에는 화자 구분이 없습니다.** SPK1·화자A·화자B 같은 화자 라벨을 절대 만들어내지 말고, 전사본에 실명이 직접 등장하지 않는 한 특정 발언을 누구에게 귀속시키지 마세요.
+4. 추임새, 짧은 응답("맞아요", "네") 등은 무시
+5. 이 구간에 명시되지 않은 내용을 만들어내지 마세요
+6. 위 마크다운만 출력하세요
 
 전사본:
 ${formatTranscript(segments)}

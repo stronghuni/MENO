@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildMeetingNotesPrompt,
   chunkSegmentsByTime,
+  enforceAttendeesLine,
   extractAttendees,
   extractTags
 } from './prompts'
@@ -108,6 +109,22 @@ describe('extractTags', () => {
     const md = '# 회의\n<!-- TAGS: 제품，로드맵，마케팅 -->'
     const { tags } = extractTags(md)
     expect(tags).toEqual(['제품', '로드맵', '마케팅'])
+  })
+})
+
+describe('enforceAttendeesLine', () => {
+  it('blanks out a hallucinated 미상 when no attendees', () => {
+    const md = '# 회의\n\n- **일시**: 2026-05-22\n- **참석자**: 미상\n- **회의 목적**: x'
+    expect(enforceAttendeesLine(md, [])).toContain('- **참석자**:')
+    expect(enforceAttendeesLine(md, [])).not.toContain('미상')
+  })
+  it('replaces the line with the form attendee list', () => {
+    const md = '- **참석자**: SPK1, SPK2'
+    expect(enforceAttendeesLine(md, ['김정훈', '이서연'])).toBe('- **참석자**: 김정훈, 이서연')
+  })
+  it('leaves notes without a 참석자 line untouched', () => {
+    const md = '# 회의\n- **일시**: 2026-05-22'
+    expect(enforceAttendeesLine(md, ['김'])).toBe(md)
   })
 })
 

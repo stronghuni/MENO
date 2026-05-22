@@ -5,7 +5,8 @@ import {
   buildChunkSummaryPrompt,
   buildMeetingNotesPrompt,
   buildMergePrompt,
-  chunkSegmentsByTime
+  chunkSegmentsByTime,
+  enforceAttendeesLine
 } from '../domain/prompts'
 import type { TranscriptSegment } from '../../shared/types'
 
@@ -99,9 +100,10 @@ export async function summarize(
   if (totalChars <= SINGLE_PASS_CHAR_LIMIT) {
     const prompt = buildMeetingNotesPrompt(title, startedAt, durationMs, segments, attendees)
     const response = await session.prompt(prompt, { maxTokens: 2048 })
-    return response.trim()
+    return enforceAttendeesLine(response.trim(), attendees)
   }
-  return mapReduce(title, startedAt, durationMs, segments, attendees, session, onProgress)
+  const merged = await mapReduce(title, startedAt, durationMs, segments, attendees, session, onProgress)
+  return enforceAttendeesLine(merged, attendees)
 }
 
 async function mapReduce(
