@@ -14,6 +14,13 @@ import { loadSettings } from './services/settings'
 // Register `meno-audio://` as a privileged scheme so the renderer can use
 // it inside an <audio> tag and CSP allows fetching from it. Must be done
 // before app.whenReady — registerSchemesAsPrivileged is rejected later.
+// Force the app name to "MENO" so the macOS menu bar, About dialog, and
+// `app.getName()`-driven menu labels don't show "Electron" in dev. Packaged
+// builds get the name from electron-builder's productName, but dev launches
+// from the bare Electron binary which reports "Electron". Must run before
+// app is ready and before buildAppMenu().
+app.setName('MENO')
+
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'meno-audio',

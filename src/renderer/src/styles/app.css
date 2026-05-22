@@ -444,6 +444,13 @@ html.is-electron.theme-dark .sidebar { background: rgba(18, 21, 28, 0.34); }
   flex: 1;
   overflow: auto;
   padding: 16px 0;
+  /* Hide the scrollbar but keep scrolling (Firefox + WebKit). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Single-row pill composer. Border lives on the wrapper so the + button
@@ -479,6 +486,13 @@ html.is-electron.theme-dark .sidebar { background: rgba(18, 21, 28, 0.34); }
   min-height: 24px;
   max-height: 140px;
   overflow-y: auto;
+  /* Hide the scrollbar but keep scrolling past 5 lines. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chat-composer textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .chat-composer textarea::placeholder {
