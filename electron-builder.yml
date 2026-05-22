@@ -23,6 +23,12 @@ mac:
   extendInfo:
     - NSMicrophoneUsageDescription: 회의 녹음을 위해 마이크 접근이 필요합니다.
   notarize: false
+  # No Apple Developer cert → ad-hoc signing. Hardened runtime forces
+  # library validation (loader/loadee Team IDs must match), which aborts
+  # ad-hoc Electron bundles on Apple Silicon with "different Team IDs".
+  # Disabling it lets the unsigned DMG launch after the user strips the
+  # download quarantine (see README). Re-enable when signing for real.
+  hardenedRuntime: false
   target:
     - target: dmg
       arch:
