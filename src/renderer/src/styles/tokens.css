@@ -415,6 +415,48 @@ code {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Fixed-affix input: https:// [editable] .atlassian.net rendered as one
+   control. The middle <input> is borderless; the wrapper carries the ring. */
+.affix-input {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+}
+
+.affix-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.affix-input .affix {
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+  background: var(--bg-sunk);
+  line-height: 32px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.affix-input input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 0 8px;
+  text-align: center;
+}
+
 .textarea {
   height: auto;
   min-height: 96px;

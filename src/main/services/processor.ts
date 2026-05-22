@@ -6,6 +6,7 @@ import { broadcast as send } from './broadcaster'
 import { hasSecret } from './keychain'
 import { loadSettings } from './settings'
 import { uploadMeeting } from './notion'
+import { exportActionItems } from './jira'
 import type { ProcessingStatus, TranscriptSegment } from '../../shared/types'
 
 const active = new Map<string, ProcessingStatus>()
@@ -172,6 +173,28 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
           partialSegments: segments
         })
         return
+      }
+    }
+
+    // ── Auto-export action items to Jira ─────────────────────────────────
+    // Same opt-in shape as Notion: only fires when the user enabled it and
+    // Jira is fully configured. Non-fatal — notes stay local and the user
+    // can retry from the meeting detail "Jira로 보내기" button.
+    if (
+      settings.autoExportToJira &&
+      settings.jiraSiteUrl &&
+      settings.jiraEmail &&
+      settings.jiraProjectKey &&
+      meetingAfterSummary?.notesMd &&
+      (await hasSecret('jira.token'))
+    ) {
+      broadcast({ meetingId, stage: 'uploading', message: 'Jira에 액션 아이템 전송 중…' })
+      try {
+        await exportActionItems(meetingId)
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        console.warn('Auto-export to Jira failed:', message)
+        // Non-fatal: fall through to done. The user can retry manually.
       }
     }
 

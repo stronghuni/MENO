@@ -3,7 +3,7 @@ import keytar from 'keytar'
 const SERVICE = 'io.namuneulbo.meno'
 const LEGACY_SERVICE = 'io.namuneulbo.meetingnotes'
 
-export type SecretKey = 'notion.token' | 'huggingface.token'
+export type SecretKey = 'notion.token' | 'huggingface.token' | 'jira.token'
 
 /**
  * If the user previously stored this key under the old service name

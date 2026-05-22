@@ -4,6 +4,9 @@ import type {
   AppSettings,
   ChatMessage,
   DownloadProgress,
+  JiraExportResult,
+  JiraIssueType,
+  JiraProject,
   Meeting,
   ModelSpec,
   NotionDatabase,
@@ -81,6 +84,14 @@ const api = {
     databases: (): Promise<NotionDatabase[]> => ipcRenderer.invoke('notion:databases'),
     upload: (meetingId: string): Promise<{ url: string }> =>
       ipcRenderer.invoke('notion:upload', meetingId)
+  },
+  jira: {
+    test: (): Promise<{ ok: true; displayName: string }> => ipcRenderer.invoke('jira:test'),
+    projects: (): Promise<JiraProject[]> => ipcRenderer.invoke('jira:projects'),
+    issueTypes: (projectKey: string): Promise<JiraIssueType[]> =>
+      ipcRenderer.invoke('jira:issueTypes', projectKey),
+    export: (meetingId: string): Promise<JiraExportResult> =>
+      ipcRenderer.invoke('jira:export', meetingId)
   },
   downloads: {
     specs: (): Promise<ModelSpec[]> => ipcRenderer.invoke('downloads:specs'),

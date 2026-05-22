@@ -33,6 +33,7 @@ import { markdownToDocxBuffer } from './services/docxExport'
 import { deleteSecret, getSecret, hasSecret, setSecret, SecretKey } from './services/keychain'
 import { loadSettings, saveSettings, Settings } from './services/settings'
 import { searchDatabases, uploadMeeting } from './services/notion'
+import { testJira, listProjects, listIssueTypes, exportActionItems } from './services/jira'
 import { cancelDownload, downloadModel, MODEL_SPECS, ModelSpec } from './services/downloader'
 import { dialog, shell } from 'electron'
 import { copyFileSync, existsSync, writeFileSync } from 'fs'
@@ -98,6 +99,12 @@ export const handlers: Record<string, Handler> = {
   // ── notion ────────────────────────────────────────────────────────────
   'notion:databases': () => searchDatabases(),
   'notion:upload': (meetingId) => uploadMeeting(meetingId as string),
+
+  // ── jira (action items → issues) ───────────────────────────────────────
+  'jira:test': () => testJira(),
+  'jira:projects': () => listProjects(),
+  'jira:issueTypes': (projectKey) => listIssueTypes(projectKey as string),
+  'jira:export': (meetingId) => exportActionItems(meetingId as string),
 
   // ── downloads ─────────────────────────────────────────────────────────
   'downloads:specs': () => MODEL_SPECS,

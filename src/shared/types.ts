@@ -57,7 +57,7 @@ export interface RecordingStartParams {
   sampleRate: number
 }
 
-export type SecretKey = 'notion.token' | 'huggingface.token'
+export type SecretKey = 'notion.token' | 'huggingface.token' | 'jira.token'
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -66,6 +66,16 @@ export interface AppSettings {
   onboardingCompleted: boolean
   theme: ThemeMode
   autoUploadToNotion: boolean
+  /** Jira Cloud site, e.g. "https://acme.atlassian.net". */
+  jiraSiteUrl: string | null
+  /** Atlassian account email used for API-token basic auth. */
+  jiraEmail: string | null
+  /** Default project key (e.g. "MEET") new issues are created under. */
+  jiraProjectKey: string | null
+  /** Default issue type name (e.g. "Task"). */
+  jiraIssueType: string | null
+  /** Auto-create Jira issues from action items after summarization. */
+  autoExportToJira: boolean
 }
 
 export interface NotionTarget {
@@ -76,6 +86,31 @@ export interface NotionTarget {
 
 /** @deprecated alias kept for renderer code that still imports the old name */
 export type NotionDatabase = NotionTarget
+
+export interface JiraProject {
+  id: string
+  key: string
+  name: string
+}
+
+export interface JiraIssueType {
+  id: string
+  name: string
+}
+
+/** Per-action-item outcome of a Jira export run. */
+export interface JiraCreatedIssue {
+  task: string
+  key: string | null // e.g. "MEET-42", null on failure
+  url: string | null
+  error: string | null
+}
+
+export interface JiraExportResult {
+  created: JiraCreatedIssue[]
+  total: number
+  succeeded: number
+}
 
 export interface ModelStatus {
   whisper: boolean

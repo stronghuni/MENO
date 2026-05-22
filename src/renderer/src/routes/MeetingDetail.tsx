@@ -31,6 +31,7 @@ export default function MeetingDetail(): React.JSX.Element {
   const [meeting, setMeeting] = useState<Meeting | null>(null)
   const [status, setStatus] = useState<ProcessingStatus | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [jiraSending, setJiraSending] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [editingNotes, setEditingNotes] = useState(false)
 
@@ -174,6 +175,27 @@ export default function MeetingDetail(): React.JSX.Element {
       await api.shell.exportNotes(id, format)
     })
 
+  const sendToJira = (): Promise<void> =>
+    runAction(async () => {
+      if (!id) return
+      const api = getApi()
+      if (!api) return
+      setJiraSending(true)
+      try {
+        const res = await api.jira.export(id)
+        if (res.total === 0) {
+          window.alert('이 회의록에 보낼 액션 아이템이 없습니다.')
+          return
+        }
+        const lines = res.created.map((c) =>
+          c.key ? `✓ ${c.key}  ${c.task}` : `✗ ${c.task} — ${c.error ?? '실패'}`
+        )
+        window.alert(`Jira 이슈 ${res.succeeded}/${res.total}개 생성됨\n\n${lines.join('\n')}`)
+      } finally {
+        setJiraSending(false)
+      }
+    })
+
   return (
     <div className="main">
       <header className="main-header">
@@ -233,6 +255,14 @@ export default function MeetingDetail(): React.JSX.Element {
               Notion에서 열기 ↗
             </a>
           )}
+          <button
+            className="btn"
+            onClick={sendToJira}
+            disabled={jiraSending || !meeting?.notesMd}
+            title={!meeting?.notesMd ? '회의록이 작성된 뒤 보낼 수 있습니다' : '액션 아이템을 Jira 이슈로 생성'}
+          >
+            {jiraSending ? '전송 중…' : 'Jira로 보내기'}
+          </button>
           <button
             className="btn btn-accent"
             onClick={upload}

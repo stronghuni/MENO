@@ -14,13 +14,24 @@ export interface Settings {
   onboardingCompleted: boolean
   theme: ThemeMode
   autoUploadToNotion: boolean
+  // ── Jira (action items → issues) ──────────────────────────────────
+  jiraSiteUrl: string | null
+  jiraEmail: string | null
+  jiraProjectKey: string | null
+  jiraIssueType: string | null
+  autoExportToJira: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
   notionParentId: null,
   onboardingCompleted: false,
   theme: 'auto',
-  autoUploadToNotion: true
+  autoUploadToNotion: true,
+  jiraSiteUrl: null,
+  jiraEmail: null,
+  jiraProjectKey: null,
+  jiraIssueType: null,
+  autoExportToJira: false
 }
 
 function getSettingsPath(): string {

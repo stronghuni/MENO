@@ -117,6 +117,12 @@ function buildHttpApi(): WindowApi {
       databases: () => invoke('notion:databases'),
       upload: (id: string) => invoke('notion:upload', id)
     },
+    jira: {
+      test: () => invoke('jira:test'),
+      projects: () => invoke('jira:projects'),
+      issueTypes: (projectKey: string) => invoke('jira:issueTypes', projectKey),
+      export: (id: string) => invoke('jira:export', id)
+    },
     downloads: {
       specs: () => invoke('downloads:specs'),
       start: (key: string) => invoke('downloads:start', key),
