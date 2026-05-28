@@ -1,7 +1,7 @@
 {
   "name": "meno",
   "productName": "MENO",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "마이크 녹음 → 로컬 전사 → 회의록 → Notion 업로드",
   "main": "./out/main/index.js",
   "author": "namuneulbo",
