@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, IpcRendererEvent, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
   AppSettings,
@@ -32,6 +32,13 @@ const api = {
         | string
         | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
     ): Promise<Meeting> => ipcRenderer.invoke('meetings:create', input),
+    createFromFile: (input: {
+      title: string
+      startedAt?: number
+      attendees?: string[]
+      projectId?: string | null
+      sourceFilePath: string
+    }): Promise<Meeting> => ipcRenderer.invoke('meetings:createFromFile', input),
     update: (id: string, patch: Partial<Meeting>): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:update', id, patch),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('meetings:delete', id),
@@ -152,6 +159,12 @@ const api = {
       ipcRenderer.invoke('shell:exportNotes', meetingId, format),
     downloadAudio: (meetingId: string): Promise<string | null> =>
       ipcRenderer.invoke('shell:downloadAudio', meetingId)
+  },
+  fs: {
+    // Electron 32+ removed File.path. Renderer must call this on a File
+    // (from <input type="file"> or drag-and-drop) to get the on-disk path
+    // for IPC. Lives in preload because webUtils is privileged.
+    getPathForFile: (file: File): string => webUtils.getPathForFile(file)
   },
   chat: {
     history: (): Promise<ChatMessage[]> => ipcRenderer.invoke('chat:history'),

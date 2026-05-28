@@ -83,6 +83,13 @@ function buildHttpApi(): WindowApi {
           | string
           | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
       ) => invoke('meetings:create', input),
+      createFromFile: (input: {
+        title: string
+        startedAt?: number
+        attendees?: string[]
+        projectId?: string | null
+        sourceFilePath: string
+      }) => invoke('meetings:createFromFile', input),
       update: (id: string, patch: unknown) => invoke('meetings:update', id, patch),
       delete: (id: string) => invoke('meetings:delete', id),
       deleteMany: (ids: string[]) => invoke('meetings:deleteMany', ids),

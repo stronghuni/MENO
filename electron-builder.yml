@@ -11,6 +11,11 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  # ffmpeg-static ships a ~43 MB native binary that must stay executable on
+  # disk for `convertToWav` to spawn it. asar archives are read-only;
+  # unpacking puts the binary at app.asar.unpacked/node_modules/ffmpeg-static
+  # where the path-rewrite in audioImport.ts can find it.
+  - node_modules/ffmpeg-static/**
 win:
   executableName: meno
 nsis:

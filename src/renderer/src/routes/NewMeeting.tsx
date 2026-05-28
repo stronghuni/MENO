@@ -26,9 +26,22 @@ function defaultTitle(d: Date): string {
   return `회의 ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+type Mode = 'record' | 'upload'
+
+const ACCEPT_ATTR =
+  '.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.wma,.mp4,.mov,.avi,.mkv,.webm,.m4v,.mpg,.mpeg,audio/*,video/*'
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
 export default function NewMeeting(): React.JSX.Element {
   const rec = useRecording()
   const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>('record')
   const [title, setTitle] = useState('')
   const [scheduledAt, setScheduledAt] = useState<string>(() => toLocalDatetimeValue(new Date()))
   const [attendees, setAttendees] = useState<string[]>([])
@@ -38,6 +51,10 @@ export default function NewMeeting(): React.JSX.Element {
   const [projectId, setProjectId] = useState<string>('')
   const [creatingProject, setCreatingProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
+  // ── Upload mode state ──────────────────────────────────────────────────
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [dropActive, setDropActive] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   useEffect(() => {
     const api = getApi()
@@ -94,6 +111,60 @@ export default function NewMeeting(): React.JSX.Element {
     }
   }
 
+  const submitUpload = async (): Promise<void> => {
+    if (!uploadFile || busy) return
+    const api = getApi()
+    if (!api) return
+    setUploadError(null)
+    setBusy(true)
+    try {
+      // Resolve the on-disk path via the preload (webUtils). Not available
+      // outside Electron — the dev HTTP bridge can't ship file uploads.
+      const win = window as unknown as { api?: { fs?: { getPathForFile?: (f: File) => string } } }
+      const sourceFilePath = win.api?.fs?.getPathForFile?.(uploadFile)
+      if (!sourceFilePath) {
+        setUploadError('파일 업로드는 데스크톱 앱에서만 가능합니다.')
+        return
+      }
+      const startedAt = scheduledAt ? new Date(scheduledAt).getTime() : Date.now()
+      const resolvedTitle = title.trim() || uploadFile.name.replace(/\.[^/.]+$/, '')
+      const meeting = await api.meetings.createFromFile({
+        title: resolvedTitle,
+        startedAt,
+        attendees,
+        projectId: projectId || null,
+        sourceFilePath
+      })
+      navigate(`/meeting/${meeting.id}`)
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pickFromInput = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const f = e.target.files?.[0] ?? null
+    if (f) setUploadFile(f)
+    setUploadError(null)
+    // Reset so picking the same file twice still fires onChange.
+    e.target.value = ''
+  }
+  const onDragOver = (e: React.DragEvent): void => {
+    e.preventDefault()
+    setDropActive(true)
+  }
+  const onDragLeave = (): void => setDropActive(false)
+  const onDrop = (e: React.DragEvent): void => {
+    e.preventDefault()
+    setDropActive(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f) {
+      setUploadFile(f)
+      setUploadError(null)
+    }
+  }
+
   const togglePause = async (): Promise<void> => {
     if (!rec.isRecording) return
     if (rec.isPaused) await rec.resume()
@@ -111,11 +182,40 @@ export default function NewMeeting(): React.JSX.Element {
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div style={{ width: '100%', maxWidth: 480, margin: 'auto', display: 'grid', gap: 18 }}>
-            <header style={{ textAlign: 'center', display: 'grid', gap: 6, marginBottom: 4 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 600 }}>새 회의 녹음</h2>
+            <header style={{ textAlign: 'center', display: 'grid', gap: 10, marginBottom: 4 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 600 }}>
+                {mode === 'record' ? '새 회의 녹음' : '회의 파일 업로드'}
+              </h2>
               <p className="muted" style={{ fontSize: 13 }}>
-                회의 정보를 입력하고 녹음을 시작하세요. 종료 시 자동으로 전사·요약이 실행됩니다.
+                {mode === 'record'
+                  ? '회의 정보를 입력하고 녹음을 시작하세요. 종료 시 자동으로 전사·요약이 실행됩니다.'
+                  : 'mp3·wav·mp4 등 기존 회의 파일을 올리면 자동으로 전사와 회의록이 작성됩니다.'}
               </p>
+              <div
+                className="seg-toggle"
+                role="tablist"
+                aria-label="입력 방식"
+                data-active={mode === 'record' ? '0' : '1'}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'record'}
+                  className={mode === 'record' ? 'active' : ''}
+                  onClick={() => setMode('record')}
+                >
+                  마이크 녹음
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'upload'}
+                  className={mode === 'upload' ? 'active' : ''}
+                  onClick={() => setMode('upload')}
+                >
+                  파일 업로드
+                </button>
+              </div>
             </header>
 
             {whisperReady === false && (
@@ -208,54 +308,118 @@ export default function NewMeeting(): React.JSX.Element {
                 />
               </div>
 
-              <div>
-                <label className="label">입력 장치</label>
-                <select
-                  className="select"
-                  value={rec.selectedDeviceId ?? ''}
-                  onChange={(e) => rec.setSelectedDeviceId(e.target.value)}
-                  disabled={rec.devices.length === 0}
-                >
-                  {rec.devices.length === 0 && <option value="">마이크 권한이 필요합니다</option>}
-                  {rec.devices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {mode === 'record' ? (
+                <>
+                  <div>
+                    <label className="label">입력 장치</label>
+                    <select
+                      className="select"
+                      value={rec.selectedDeviceId ?? ''}
+                      onChange={(e) => rec.setSelectedDeviceId(e.target.value)}
+                      disabled={rec.devices.length === 0}
+                    >
+                      {rec.devices.length === 0 && (
+                        <option value="">마이크 권한이 필요합니다</option>
+                      )}
+                      {rec.devices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                          {d.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {rec.micError && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--danger)',
-                    background: 'var(--danger-soft)',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)'
-                  }}
-                >
-                  {rec.micError}
+                  {rec.micError && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--danger)',
+                        background: 'var(--danger-soft)',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-sm)'
+                      }}
+                    >
+                      {rec.micError}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  <label className="label">회의 파일</label>
+                  <label
+                    className={`file-drop ${dropActive ? 'is-over' : ''} ${uploadFile ? 'has-file' : ''}`}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                  >
+                    <input
+                      type="file"
+                      accept={ACCEPT_ATTR}
+                      onChange={pickFromInput}
+                      style={{ display: 'none' }}
+                    />
+                    {uploadFile ? (
+                      <>
+                        <div className="file-drop-name">{uploadFile.name}</div>
+                        <div className="file-drop-meta">
+                          {formatBytes(uploadFile.size)} · 클릭해서 다른 파일 선택
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="file-drop-title">
+                          파일을 끌어다 놓거나 클릭해서 선택
+                        </div>
+                        <div className="file-drop-meta">
+                          mp3, wav, m4a, flac · mp4, mov, avi, mkv, webm
+                        </div>
+                      </>
+                    )}
+                  </label>
+                  {uploadError && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        fontSize: 12,
+                        color: 'var(--danger)',
+                        background: 'var(--danger-soft)',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-sm)'
+                      }}
+                    >
+                      {uploadError}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <button
-              className="btn btn-primary btn-lg"
-              disabled={busy || rec.devices.length === 0}
-              onClick={startRecording}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: 'var(--danger)',
-                  boxShadow: '0 0 0 3px rgba(220,38,38,0.3)'
-                }}
-              />
-              녹음 시작
-            </button>
+            {mode === 'record' ? (
+              <button
+                className="btn btn-primary btn-lg"
+                disabled={busy || rec.devices.length === 0}
+                onClick={startRecording}
+              >
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: 'var(--danger)',
+                    boxShadow: '0 0 0 3px rgba(220,38,38,0.3)'
+                  }}
+                />
+                녹음 시작
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-lg"
+                disabled={busy || !uploadFile}
+                onClick={submitUpload}
+              >
+                {busy ? '변환 중…' : '회의록 만들기'}
+              </button>
+            )}
           </div>
         </div>
 

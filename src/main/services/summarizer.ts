@@ -22,7 +22,22 @@ const CHUNK_SEC = 10 * 60
 const OVERLAP_SEC = 60
 
 interface LlamaSessionLike {
-  prompt(input: string, opts?: { maxTokens?: number }): Promise<string>
+  prompt(
+    input: string,
+    opts?: { maxTokens?: number; onTextChunk?: (text: string) => void }
+  ): Promise<string>
+}
+
+/**
+ * Qwen sometimes wraps its entire reply in ```markdown ... ``` (or just plain
+ * triple backticks). react-markdown then renders the whole thing as a code
+ * block — the user sees raw `#`/`**` characters and a monospace wash on
+ * every line. Strip the outer fence so the markdown can parse normally.
+ */
+function stripMarkdownFence(s: string): string {
+  const trimmed = s.trim()
+  const m = trimmed.match(/^```(?:[a-zA-Z]+)?\s*\n([\s\S]*?)\n```\s*$/)
+  return m ? m[1].trim() : trimmed
 }
 
 let cachedSession: LlamaSessionLike | null = null
@@ -93,16 +108,36 @@ export async function summarize(
   durationMs: number | null,
   segments: TranscriptSegment[],
   attendees: string[] = [],
-  onProgress?: (p: SummaryProgress) => void
+  onProgress?: (p: SummaryProgress) => void,
+  onChunk?: (accumulated: string) => void
 ): Promise<string> {
   const session = await loadSession()
   const totalChars = estimateChars(segments)
   if (totalChars <= SINGLE_PASS_CHAR_LIMIT) {
     const prompt = buildMeetingNotesPrompt(title, startedAt, durationMs, segments, attendees)
-    const response = await session.prompt(prompt, { maxTokens: 2048 })
-    return enforceAttendeesLine(response.trim(), attendees)
+    let buffer = ''
+    const response = await session.prompt(prompt, {
+      maxTokens: 2048,
+      onTextChunk: (delta) => {
+        buffer += delta
+        // Strip a leading wrapping fence on the fly so the partial render
+        // doesn't briefly look like a code block.
+        const cleaned = buffer.replace(/^```(?:[a-zA-Z]+)?\s*\n?/, '')
+        onChunk?.(cleaned)
+      }
+    })
+    return enforceAttendeesLine(stripMarkdownFence(response), attendees)
   }
-  const merged = await mapReduce(title, startedAt, durationMs, segments, attendees, session, onProgress)
+  const merged = await mapReduce(
+    title,
+    startedAt,
+    durationMs,
+    segments,
+    attendees,
+    session,
+    onProgress,
+    onChunk
+  )
   return enforceAttendeesLine(merged, attendees)
 }
 
@@ -113,7 +148,8 @@ async function mapReduce(
   segments: TranscriptSegment[],
   attendees: string[],
   session: LlamaSessionLike,
-  onProgress?: (p: SummaryProgress) => void
+  onProgress?: (p: SummaryProgress) => void,
+  onChunk?: (accumulated: string) => void
 ): Promise<string> {
   const chunks = chunkSegmentsByTime(segments, CHUNK_SEC, OVERLAP_SEC)
   const partials: string[] = []
@@ -128,12 +164,22 @@ async function mapReduce(
       chunk.endSec
     )
     const out = await session.prompt(prompt, { maxTokens: 1024 })
-    partials.push(out.trim())
+    partials.push(stripMarkdownFence(out))
   }
   onProgress?.({ stage: 'merge', current: chunks.length, total: chunks.length })
   // Attendees come from the user's new-meeting form, not from the
   // transcript (no diarization). Pass them through verbatim.
   const mergePrompt = buildMergePrompt(title, startedAt, durationMs, attendees, partials)
-  const final = await session.prompt(mergePrompt, { maxTokens: 2048 })
-  return final.trim()
+  // Only the final merge is streamed; intermediate chunk summaries would
+  // confuse the user (they're not the final notes).
+  let buffer = ''
+  const final = await session.prompt(mergePrompt, {
+    maxTokens: 2048,
+    onTextChunk: (delta) => {
+      buffer += delta
+      const cleaned = buffer.replace(/^```(?:[a-zA-Z]+)?\s*\n?/, '')
+      onChunk?.(cleaned)
+    }
+  })
+  return stripMarkdownFence(final)
 }

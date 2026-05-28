@@ -229,7 +229,7 @@ export default function MeetingDetail(): React.JSX.Element {
           </button>
           {editingTitle ? (
             <input
-              className="input"
+              className="input title-edit-input"
               autoFocus
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
@@ -241,13 +241,16 @@ export default function MeetingDetail(): React.JSX.Element {
                   setEditingTitle(false)
                 }
               }}
-              style={{ maxWidth: 360 }}
             />
           ) : (
             <h1
-              onDoubleClick={() => setEditingTitle(true)}
-              title="더블클릭으로 제목 편집"
-              style={{ cursor: 'text', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
+              className="editable-title"
+              onClick={() => {
+                if (!meeting) return
+                setTitleDraft(meeting.title)
+                setEditingTitle(true)
+              }}
+              title="클릭해서 제목 편집"
             >
               {meeting?.title ?? '회의 상세'}
             </h1>
@@ -336,7 +339,10 @@ export default function MeetingDetail(): React.JSX.Element {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                // minmax(0, 1fr) on both columns: without this the markdown
+                // table on the notes side blows past 50% and the transcript
+                // column gets squeezed down to one character per line.
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
                 gap: 24,
                 minHeight: 0
               }}
@@ -472,6 +478,15 @@ export default function MeetingDetail(): React.JSX.Element {
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {meeting.notesMd}
                       </ReactMarkdown>
+                    </div>
+                  ) : status?.stage === 'summarizing' && status.notesPartial ? (
+                    // Live streaming preview — render the partial buffer as
+                    // markdown so the user watches the doc grow token-by-token.
+                    <div className="chat-markdown notes-streaming">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {status.notesPartial}
+                      </ReactMarkdown>
+                      <span className="streaming-cursor" aria-hidden />
                     </div>
                   ) : notesSummarizing ? (
                     <div className="notes-spinner">

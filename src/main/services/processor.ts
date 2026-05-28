@@ -118,6 +118,7 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
       try {
         const meeting = getMeeting(meetingId)
         if (meeting) {
+          let lastBroadcastLen = 0
           const rawNotes = await summarize(
             meeting.title,
             meeting.startedAt,
@@ -130,6 +131,19 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
                   ? `긴 회의 — 구간 요약 중 (${p.current}/${p.total})…`
                   : '최종 회의록 통합 중…'
               broadcast({ meetingId, stage: 'summarizing', message: msg })
+            },
+            (accumulated) => {
+              // Throttle: only re-broadcast when 24+ new chars have arrived
+              // (~one Qwen token in Korean). Avoids hammering the renderer
+              // with one IPC per character on fast machines.
+              if (accumulated.length - lastBroadcastLen < 24) return
+              lastBroadcastLen = accumulated.length
+              broadcast({
+                meetingId,
+                stage: 'summarizing',
+                message: '회의록 작성 중…',
+                notesPartial: accumulated
+              })
             }
           )
           const { tags, cleanedNotes } = extractTags(rawNotes)

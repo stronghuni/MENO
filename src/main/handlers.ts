@@ -17,6 +17,7 @@ import {
   getMeeting,
   listMeetings,
   updateMeeting,
+  getRecordingsDir,
   listProjects as listAppProjects,
   createProject,
   deleteProject,
@@ -25,6 +26,9 @@ import {
   updateEvent,
   deleteEvent
 } from './services/storage'
+import { convertToWav, isAcceptedFile, ACCEPTED_EXTENSIONS } from './services/audioImport'
+import { broadcast } from './services/broadcaster'
+import { join } from 'path'
 import {
   appendChunk,
   pauseRecording,
@@ -70,6 +74,61 @@ export const handlers: Record<string, Handler> = {
         | string
         | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
     ),
+
+  // Import an existing audio/video file as a meeting. The renderer hands us
+  // the absolute path (resolved from a File via webUtils.getPathForFile);
+  // we create the meeting row, transcode to 16 kHz mono WAV under the
+  // recordings dir, and kick off the regular transcription pipeline.
+  'meetings:createFromFile': async (input) => {
+    const params = input as {
+      title: string
+      startedAt?: number
+      attendees?: string[]
+      projectId?: string | null
+      sourceFilePath: string
+    }
+    if (!params.sourceFilePath) throw new Error('파일 경로가 없습니다.')
+    if (!isAcceptedFile(params.sourceFilePath)) {
+      throw new Error(
+        `지원되지 않는 파일 형식입니다. 가능한 확장자: ${ACCEPTED_EXTENSIONS.join(', ')}`
+      )
+    }
+    const meeting = createMeeting({
+      title: params.title,
+      startedAt: params.startedAt,
+      attendees: params.attendees,
+      projectId: params.projectId ?? null
+    })
+    const wavPath = join(getRecordingsDir(), `${meeting.id}.wav`)
+    // Broadcast a preparing status so the meeting-detail UI can show
+    // "파일 변환 중…" immediately, before transcribe takes over.
+    broadcast('processing:update', {
+      meetingId: meeting.id,
+      stage: 'preparing',
+      message: '파일 변환 중…'
+    })
+    try {
+      const { durationMs } = await convertToWav(params.sourceFilePath, wavPath)
+      const startedAt = params.startedAt ?? meeting.startedAt
+      updateMeeting(meeting.id, {
+        audioPath: wavPath,
+        durationMs,
+        endedAt: startedAt + durationMs
+      })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      broadcast('processing:update', {
+        meetingId: meeting.id,
+        stage: 'error',
+        message: `파일 변환 실패: ${message}`
+      })
+      throw e
+    }
+    // Fire-and-forget; the renderer navigates to the meeting detail and
+    // listens to processing:update like a normal recording flow.
+    void processRecording(meeting.id, wavPath)
+    return meeting
+  },
 
   // ── calendar events ─────────────────────────────────────────────────────
   'events:list': () => listEvents(),

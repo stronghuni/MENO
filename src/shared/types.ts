@@ -66,6 +66,7 @@ export interface TranscriptSegment {
 
 export type ProcessingStage =
   | 'idle'
+  | 'preparing'
   | 'transcribing'
   | 'diarizing'
   | 'summarizing'
@@ -76,6 +77,8 @@ export type ProcessingStage =
 export interface ProcessingStatus {
   meetingId: string
   stage: ProcessingStage
+  /** Live notes draft streamed token-by-token during the summarizing stage. */
+  notesPartial?: string
   message?: string
   partialSegments?: TranscriptSegment[]
 }

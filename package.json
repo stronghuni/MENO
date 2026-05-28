@@ -1,7 +1,7 @@
 {
   "name": "meno",
   "productName": "MENO",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "마이크 녹음 → 로컬 전사 → 회의록 → Notion 업로드",
   "main": "./out/main/index.js",
   "author": "namuneulbo",
@@ -30,6 +30,7 @@
     "@tryfabric/martian": "^1.2.4",
     "better-sqlite3": "^12.10.0",
     "docx": "^9.6.1",
+    "ffmpeg-static": "^5.3.0",
     "keytar": "^7.9.0",
     "node-llama-cpp": "^3.18.1",
     "react-markdown": "^10.1.0",

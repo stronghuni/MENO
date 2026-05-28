@@ -3,6 +3,8 @@ import { join } from 'path'
 import { Whisper } from 'smart-whisper'
 import { getModelsDir } from './storage'
 import { readWav } from './wavReader'
+import { computeVoicedRegions, overlapVoicedSec, type VoicedRegion } from '../domain/voicedRegions'
+import { collapseRepeatedSegments } from '../domain/transcriptCleanup'
 import type { TranscriptSegment } from '../../shared/types'
 
 const MODEL_FILENAME = 'ggml-large-v3-turbo.bin'
@@ -81,6 +83,23 @@ function isHallucination(text: string): boolean {
   return HALLUCINATION_PATTERNS.some((re) => re.test(t))
 }
 
+// Voiced-region post-filter (anti-hallucination Tier 2 Mode A): segments
+// whose time range barely overlaps any voiced span are almost always
+// Whisper hallucinating over silence. We compute a voiced timeline from
+// the input PCM once per transcription and drop segments whose overlap
+// ratio with that timeline falls below this fraction.
+const VOICED_MIN_OVERLAP_RATIO = 0.2
+
+function isOverSilence(
+  startSec: number,
+  endSec: number,
+  voiced: VoicedRegion[]
+): boolean {
+  const dur = endSec - startSec
+  if (dur <= 0) return true
+  return overlapVoicedSec(startSec, endSec, voiced) / dur < VOICED_MIN_OVERLAP_RATIO
+}
+
 export async function transcribeWav(
   wavPath: string,
   onProgress?: (p: TranscribeProgress) => void
@@ -89,6 +108,9 @@ export async function transcribeWav(
   if (sampleRate !== 16000) {
     throw new Error(`Expected 16kHz WAV, got ${sampleRate}Hz`)
   }
+  // Pre-compute voiced timeline so the segment filter can run inline as
+  // Whisper streams results — see VOICED_MIN_OVERLAP_RATIO.
+  const voiced = computeVoicedRegions(pcm, { sampleRate })
   const whisper = getWhisper()
   // Streaming segments delivered via `task.on('transcribed', ...)`. Listener
   // is attached as early as possible so we don't miss segments emitted by
@@ -105,24 +127,30 @@ export async function transcribeWav(
     n_threads: 6,
     print_progress: false,
     print_realtime: false,
-    // Anti-hallucination knobs:
+    // Anti-hallucination knobs (whisper.cpp → smart-whisper pass-through):
     //   - no_speech_threshold: stricter "is this silence?" cutoff.
     //     Default 0.6; bumping to 0.8 drops more borderline-quiet chunks
     //     so the model doesn't fall back to memorized subtitle credits.
     //   - logprob_threshold: drop segments where the model is unsure.
+    //   - entropy_thold: drop segments whose token entropy looks like a
+    //     stuck-loop hallucination (default 2.4 → 2.2 is a small tightening).
     //   - condition_on_previous_text: false stops the repetition cascade
     //     where one hallucination primes the next.
     no_speech_threshold: 0.8,
     logprob_threshold: -0.8,
+    entropy_thold: 2.2,
     condition_on_previous_text: false
   } as Parameters<typeof whisper.transcribe>[1])
   const task = await taskPromise
   const pushSegment = (r: { from: number; to: number; text: string }): void => {
     const text = r.text.trim()
     if (isHallucination(text)) return
+    const startSec = r.from / 1000
+    const endSec = r.to / 1000
+    if (isOverSilence(startSec, endSec, voiced)) return
     const seg: TranscriptSegment = {
-      start: r.from / 1000,
-      end: r.to / 1000,
+      start: startSec,
+      end: endSec,
       speaker: null,
       text
     }
@@ -160,7 +188,7 @@ export async function transcribeWav(
     console.warn('[transcriber] task.result was', typeof finalResults, finalResults)
   }
   segments.sort((a, b) => a.start - b.start)
-  return segments
+  return collapseRepeatedSegments(segments)
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -243,6 +271,9 @@ export async function transcribeWavChunked(
     throw new Error(`Expected 16kHz WAV, got ${sampleRate}Hz`)
   }
   const chunks = chunkPcm(pcm, sampleRate)
+  // Voiced timeline on the absolute (full-recording) axis — computed once
+  // and consulted per segment in each chunk's accept callback.
+  const voiced = computeVoicedRegions(pcm, { sampleRate })
   const whisper = getWhisper()
   const accumulated: TranscriptSegment[] = []
   // Anchor used to dedupe overlap-region segments. Anything starting
@@ -259,6 +290,7 @@ export async function transcribeWavChunked(
       print_realtime: false,
       no_speech_threshold: 0.8,
       logprob_threshold: -0.8,
+      entropy_thold: 2.2,
       condition_on_previous_text: false
     } as Parameters<typeof whisper.transcribe>[1])
     const task = await taskPromise
@@ -269,6 +301,7 @@ export async function transcribeWavChunked(
       if (isHallucination(text)) return
       const absStart = ch.startSec + r.from / 1000
       const absEnd = ch.startSec + r.to / 1000
+      if (isOverSilence(absStart, absEnd, voiced)) return
       // Drop anything still inside the overlap region the previous
       // chunk already committed. 0.5s tolerance accommodates Whisper's
       // tendency to nudge boundaries by a few hundred ms between runs.
@@ -311,7 +344,10 @@ export async function transcribeWavChunked(
     })
   }
 
-  return accumulated
+  // Final pass: collapse Whisper silence-loop hallucinations (3+ consecutive
+  // identical short segments → keep first). Done after all chunks settle so
+  // the run isn't split across the chunk boundary.
+  return collapseRepeatedSegments(accumulated)
 }
 
 export async function unloadModel(): Promise<void> {

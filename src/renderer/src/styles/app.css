@@ -2095,3 +2095,160 @@ html.is-electron.theme-dark .sidebar { background: rgba(18, 21, 28, 0.34); }
   transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
 }
 .conn-zoom button:hover { background: var(--bg-hover); color: var(--text); }
+
+/* New-meeting mode toggle (마이크 녹음 ↔ 파일 업로드). Pill-segmented tabs
+   with a sliding indicator — a ::before pseudo-element sits behind the
+   buttons and animates between positions via data-active.
+   Notes:
+   - The header is a CSS grid, so the pill needs justify-self (not
+     align-self) to collapse to content width and centre horizontally.
+   - Equal-width buttons (flex:1 + min-width) keep the slider perfectly
+     aligned regardless of label width.
+   - The slider math: pill padding-box width minus left/right padding (6px)
+     minus the 2px gap, divided by 2, yields exactly one button's width. */
+.seg-toggle {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  justify-self: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px;
+  background: var(--bg-sunk);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  gap: 2px;
+}
+.seg-toggle::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 8px) / 2);
+  background: var(--bg);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  z-index: 0;
+  transition: transform 0.28s var(--ease-out);
+  will-change: transform;
+}
+.seg-toggle[data-active='1']::before {
+  transform: translateX(calc(100% + 2px));
+}
+.seg-toggle button {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 124px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out);
+}
+.seg-toggle button:hover {
+  color: var(--text);
+}
+.seg-toggle button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.seg-toggle button.active {
+  color: var(--text);
+}
+
+/* Upload dropzone for the meeting-file flow. Dashed border, content
+   centred, swells on drag-over so the affordance is unambiguous. */
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 26px 18px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color 0.14s var(--ease-out), background 0.14s var(--ease-out),
+    color 0.14s var(--ease-out);
+}
+.file-drop:hover { border-color: var(--accent); color: var(--text); }
+.file-drop.is-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.file-drop.has-file {
+  border-style: solid;
+  border-color: var(--accent-soft-strong);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.file-drop-title {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.file-drop-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+.file-drop-meta {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+/* Meeting detail — click the title to enter inline edit mode. A subtle
+   hover background hints that it's interactive without a separate button. */
+.editable-title {
+  cursor: text;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.14s var(--ease-out);
+}
+.editable-title:hover {
+  background: var(--bg-hover);
+}
+.title-edit-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 480px;
+  height: 32px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Live-streaming notes — a soft caret blinks at the end of the partial
+   markdown so the user sees the LLM is still writing. */
+.notes-streaming { position: relative; }
+.streaming-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  vertical-align: text-bottom;
+  margin-left: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: streaming-blink 0.9s steps(2) infinite;
+}
+@keyframes streaming-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
