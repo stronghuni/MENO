@@ -151,6 +151,30 @@ export default function Sidebar(): React.JSX.Element {
       </NavLink>
 
       <NavLink
+        to="/calendar"
+        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+      >
+        <Icon>
+          <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+          <path d="M2.5 6.5h11M5.5 2.2v2.6M10.5 2.2v2.6" />
+        </Icon>
+        캘린더
+      </NavLink>
+
+      <NavLink
+        to="/connections"
+        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+      >
+        <Icon>
+          <circle cx="4" cy="4" r="1.8" />
+          <circle cx="12" cy="6" r="1.8" />
+          <circle cx="6" cy="12.5" r="1.8" />
+          <path d="M5.4 4.7l5 .9M5.2 5.5l.8 5.3M10.8 7.3l-4 4.2" />
+        </Icon>
+        관계
+      </NavLink>
+
+      <NavLink
         to="/settings"
         className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
       >

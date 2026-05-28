@@ -78,8 +78,11 @@ function buildHttpApi(): WindowApi {
     meetings: {
       list: () => invoke('meetings:list'),
       get: (id: string) => invoke('meetings:get', id),
-      create: (input: string | { title: string; startedAt?: number; attendees?: string[] }) =>
-        invoke('meetings:create', input),
+      create: (
+        input:
+          | string
+          | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
+      ) => invoke('meetings:create', input),
       update: (id: string, patch: unknown) => invoke('meetings:update', id, patch),
       delete: (id: string) => invoke('meetings:delete', id),
       deleteMany: (ids: string[]) => invoke('meetings:deleteMany', ids),
@@ -113,6 +116,18 @@ function buildHttpApi(): WindowApi {
       load: () => invoke('settings:load'),
       save: (patch: unknown) => invoke('settings:save', patch)
     },
+    projects: {
+      list: () => invoke('projects:list'),
+      create: (name: string, color?: string | null) => invoke('projects:create', name, color ?? null),
+      delete: (id: string) => invoke('projects:delete', id)
+    },
+    events: {
+      list: () => invoke('events:list'),
+      create: (input: unknown) => invoke('events:create', input),
+      update: (id: string, patch: unknown) => invoke('events:update', id, patch),
+      delete: (id: string) => invoke('events:delete', id),
+      onChanged: (cb: () => void) => subscribe('events:changed', () => cb())
+    },
     notion: {
       databases: () => invoke('notion:databases'),
       upload: (id: string) => invoke('notion:upload', id)
@@ -122,6 +137,14 @@ function buildHttpApi(): WindowApi {
       projects: () => invoke('jira:projects'),
       issueTypes: (projectKey: string) => invoke('jira:issueTypes', projectKey),
       export: (id: string) => invoke('jira:export', id)
+    },
+    graph: {
+      connections: () => invoke('graph:connections'),
+      related: (id: string) => invoke('graph:related', id),
+      entities: (id: string) => invoke('graph:entities', id),
+      entityIndex: () => invoke('graph:entityIndex'),
+      rebuild: () => invoke('graph:rebuild'),
+      onProgress: (cb: (p: unknown) => void) => subscribe('graph:progress', (p) => cb(p as never))
     },
     downloads: {
       specs: () => invoke('downloads:specs'),

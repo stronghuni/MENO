@@ -415,6 +415,21 @@ code {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Native <select>: drop the OS chevron for a calm, branded one and add a
+   hover affordance so every dropdown trigger matches the design system. */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%238a90a0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+.select:hover {
+  border-color: var(--border-strong);
+}
+
 /* Fixed-affix input: https:// [editable] .atlassian.net rendered as one
    control. The middle <input> is borderless; the wrapper carries the ring. */
 .affix-input {

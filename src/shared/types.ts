@@ -12,8 +12,36 @@ export interface Meeting {
   notionPageUrl: string | null
   notionUploadedAt: number | null
   chatHistoryJson: string | null
+  projectId: string | null
   createdAt: number
   updatedAt: number
+}
+
+export interface Project {
+  id: string
+  name: string
+  color: string | null
+  createdAt: number
+}
+
+export interface ScheduledEvent {
+  id: string
+  title: string
+  scheduledAt: number
+  projectId: string | null
+  sourceMeetingId: string | null
+  auto: boolean
+  status: 'scheduled' | 'done' | 'cancelled'
+  notifiedAt: number | null
+  createdAt: number
+}
+
+export interface CreateEventInput {
+  title: string
+  scheduledAt: number
+  projectId?: string | null
+  sourceMeetingId?: string | null
+  auto?: boolean
 }
 
 export interface ChatMessage {
@@ -110,6 +138,45 @@ export interface JiraExportResult {
   created: JiraCreatedIssue[]
   total: number
   succeeded: number
+}
+
+// ── Relationship graph ──────────────────────────────────────────────
+export type GraphEntityType = 'person' | 'topic'
+
+export interface GraphEntity {
+  type: GraphEntityType
+  name: string
+}
+
+/** A meeting related to a given one, with the entities they share. */
+export interface RelatedMeeting {
+  id: string
+  title: string
+  startedAt: number
+  shared: GraphEntity[]
+  score: number
+}
+
+/** One row in the connections page: a meeting + its top related meetings. */
+export interface MeetingConnections {
+  id: string
+  title: string
+  startedAt: number
+  entities: GraphEntity[]
+  related: RelatedMeeting[]
+}
+
+/** An entity (topic/person) with the meetings it appears in. */
+export interface EntityIndexItem {
+  type: GraphEntityType
+  name: string
+  meetings: { id: string; title: string; startedAt: number }[]
+}
+
+export interface GraphProgress {
+  current: number
+  total: number
+  title: string | null
 }
 
 export interface ModelStatus {

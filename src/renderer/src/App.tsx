@@ -8,6 +8,8 @@ import Library from './routes/Library'
 import MeetingDetail from './routes/MeetingDetail'
 import Settings from './routes/Settings'
 import Chat from './routes/Chat'
+import Connections from './routes/Connections'
+import Calendar from './routes/Calendar'
 import { getApi } from './lib/api'
 import { applyTheme } from './lib/theme'
 import { RecordingProvider } from './contexts/RecordingContext'
@@ -47,6 +49,8 @@ export default function App(): React.JSX.Element {
               <Route path="/new" element={<NewMeeting />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/library" element={<Library />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/connections" element={<Connections />} />
               <Route path="/meeting/:id" element={<MeetingDetail />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>

@@ -10,6 +10,7 @@ import { gracefulShutdown } from './services/recording'
 import { startDevBridge } from './devBridge'
 import { getMeeting } from './services/storage'
 import { loadSettings } from './services/settings'
+import { startScheduler } from './services/scheduler'
 
 // Register `meno-audio://` as a privileged scheme so the renderer can use
 // it inside an <audio> tag and CSP allows fetching from it. Must be done
@@ -163,6 +164,7 @@ app.whenReady().then(() => {
   })
 
   registerIpcHandlers()
+  startScheduler() // calendar meeting reminders
   if (is.dev) startDevBridge()
   createWindow()
 

@@ -4,6 +4,7 @@ import AttendeesInput from '../components/AttendeesInput'
 import WaveformPulse from '../components/WaveformPulse'
 import { useRecording } from '../contexts/RecordingContext'
 import { getApi } from '../lib/api'
+import type { Project } from '../../../shared/types'
 
 function formatDuration(ms: number): string {
   const total = Math.floor(ms / 1000)
@@ -33,6 +34,27 @@ export default function NewMeeting(): React.JSX.Element {
   const [attendees, setAttendees] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [whisperReady, setWhisperReady] = useState<boolean | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [projectId, setProjectId] = useState<string>('')
+  const [creatingProject, setCreatingProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+
+  useEffect(() => {
+    const api = getApi()
+    if (!api) return
+    void api.projects.list().then(setProjects)
+  }, [])
+
+  const addProject = async (): Promise<void> => {
+    const api = getApi()
+    const name = newProjectName.trim()
+    if (!api || !name) return
+    const p = await api.projects.create(name)
+    setProjects((cur) => [...cur, p])
+    setProjectId(p.id)
+    setNewProjectName('')
+    setCreatingProject(false)
+  }
 
   useEffect(() => {
     const api = getApi()
@@ -55,7 +77,7 @@ export default function NewMeeting(): React.JSX.Element {
     try {
       const startedAt = scheduledAt ? new Date(scheduledAt).getTime() : Date.now()
       const resolvedTitle = title.trim() || defaultTitle(new Date(startedAt))
-      await rec.start({ title: resolvedTitle, startedAt, attendees })
+      await rec.start({ title: resolvedTitle, startedAt, attendees, projectId: projectId || null })
     } finally {
       setBusy(false)
     }
@@ -132,6 +154,42 @@ export default function NewMeeting(): React.JSX.Element {
               </div>
 
               <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <label className="label" style={{ marginBottom: 0 }}>
+                    프로젝트
+                  </label>
+                  {!creatingProject && (
+                    <button
+                      type="button"
+                      className="label-add"
+                      onClick={() => setCreatingProject(true)}
+                    >
+                      + 프로젝트
+                    </button>
+                  )}
+                </div>
+                <select
+                  className="select"
+                  style={{ marginTop: 6 }}
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                >
+                  <option value=""></option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="label">날짜 · 시작 시간</label>
                 <input
                   className="input"
@@ -200,6 +258,47 @@ export default function NewMeeting(): React.JSX.Element {
             </button>
           </div>
         </div>
+
+        {creatingProject && (
+          <div
+            className="modal-backdrop"
+            onClick={() => setCreatingProject(false)}
+            role="presentation"
+          >
+            <div
+              className="modal-card"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="modal-title">새 프로젝트</h3>
+              <p className="modal-desc">회의들을 묶을 프로젝트 이름을 입력하세요.</p>
+              <input
+                className="input"
+                autoFocus
+                placeholder="예: 제품팀, 2026 Q3 출시"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void addProject()
+                  if (e.key === 'Escape') setCreatingProject(false)
+                }}
+              />
+              <div className="modal-actions">
+                <button className="btn btn-ghost" onClick={() => setCreatingProject(false)}>
+                  취소
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={addProject}
+                  disabled={!newProjectName.trim()}
+                >
+                  만들기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

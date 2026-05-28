@@ -27,7 +27,12 @@ export interface RecordingState {
   setSelectedDeviceId: (id: string) => void
   micError: string | null
   watchdog: string | null
-  start: (input: { title: string; startedAt?: number; attendees?: string[] }) => Promise<void>
+  start: (input: {
+    title: string
+    startedAt?: number
+    attendees?: string[]
+    projectId?: string | null
+  }) => Promise<void>
   stop: () => Promise<{ meetingId: string } | null>
   pause: () => Promise<void>
   resume: () => Promise<void>
@@ -102,6 +107,7 @@ export function RecordingProvider({ children }: { children: React.ReactNode }): 
       title: string
       startedAt?: number
       attendees?: string[]
+      projectId?: string | null
     }): Promise<void> => {
       const api = getApi()
       if (!api || mic.isRecording) return

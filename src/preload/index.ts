@@ -4,10 +4,18 @@ import type {
   AppSettings,
   ChatMessage,
   DownloadProgress,
+  EntityIndexItem,
+  GraphEntity,
+  GraphProgress,
   JiraExportResult,
   JiraIssueType,
   JiraProject,
+  CreateEventInput,
   Meeting,
+  MeetingConnections,
+  Project,
+  RelatedMeeting,
+  ScheduledEvent,
   ModelSpec,
   NotionDatabase,
   ProcessingStatus,
@@ -20,7 +28,9 @@ const api = {
     list: (): Promise<Meeting[]> => ipcRenderer.invoke('meetings:list'),
     get: (id: string): Promise<Meeting | null> => ipcRenderer.invoke('meetings:get', id),
     create: (
-      input: string | { title: string; startedAt?: number; attendees?: string[] }
+      input:
+        | string
+        | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
     ): Promise<Meeting> => ipcRenderer.invoke('meetings:create', input),
     update: (id: string, patch: Partial<Meeting>): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:update', id, patch),
@@ -80,6 +90,25 @@ const api = {
     save: (patch: Partial<AppSettings>): Promise<AppSettings> =>
       ipcRenderer.invoke('settings:save', patch)
   },
+  projects: {
+    list: (): Promise<Project[]> => ipcRenderer.invoke('projects:list'),
+    create: (name: string, color?: string | null): Promise<Project> =>
+      ipcRenderer.invoke('projects:create', name, color ?? null),
+    delete: (id: string): Promise<void> => ipcRenderer.invoke('projects:delete', id)
+  },
+  events: {
+    list: (): Promise<ScheduledEvent[]> => ipcRenderer.invoke('events:list'),
+    create: (input: CreateEventInput): Promise<ScheduledEvent> =>
+      ipcRenderer.invoke('events:create', input),
+    update: (id: string, patch: Partial<ScheduledEvent>): Promise<void> =>
+      ipcRenderer.invoke('events:update', id, patch),
+    delete: (id: string): Promise<void> => ipcRenderer.invoke('events:delete', id),
+    onChanged: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on('events:changed', listener)
+      return () => ipcRenderer.removeListener('events:changed', listener)
+    }
+  },
   notion: {
     databases: (): Promise<NotionDatabase[]> => ipcRenderer.invoke('notion:databases'),
     upload: (meetingId: string): Promise<{ url: string }> =>
@@ -92,6 +121,20 @@ const api = {
       ipcRenderer.invoke('jira:issueTypes', projectKey),
     export: (meetingId: string): Promise<JiraExportResult> =>
       ipcRenderer.invoke('jira:export', meetingId)
+  },
+  graph: {
+    connections: (): Promise<MeetingConnections[]> => ipcRenderer.invoke('graph:connections'),
+    related: (meetingId: string): Promise<RelatedMeeting[]> =>
+      ipcRenderer.invoke('graph:related', meetingId),
+    entities: (meetingId: string): Promise<GraphEntity[]> =>
+      ipcRenderer.invoke('graph:entities', meetingId),
+    entityIndex: (): Promise<EntityIndexItem[]> => ipcRenderer.invoke('graph:entityIndex'),
+    rebuild: (): Promise<{ indexed: number }> => ipcRenderer.invoke('graph:rebuild'),
+    onProgress: (cb: (p: GraphProgress) => void): (() => void) => {
+      const listener = (_: IpcRendererEvent, p: GraphProgress): void => cb(p)
+      ipcRenderer.on('graph:progress', listener)
+      return () => ipcRenderer.removeListener('graph:progress', listener)
+    }
   },
   downloads: {
     specs: (): Promise<ModelSpec[]> => ipcRenderer.invoke('downloads:specs'),

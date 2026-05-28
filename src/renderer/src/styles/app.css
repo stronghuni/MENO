@@ -1512,3 +1512,586 @@ html.is-electron.theme-dark .sidebar { background: rgba(18, 21, 28, 0.34); }
   border-color: var(--accent);
   color: white;
 }
+
+/* ── Connections (relationship graph) ───────────────────────────────── */
+.conn-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+.conn-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.conn-title:hover { color: var(--accent); }
+.conn-meta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+.conn-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.conn-chip {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.conn-chip.person { background: var(--accent-soft); color: var(--accent); }
+.conn-chip.topic {
+  background: color-mix(in srgb, var(--navy, #1c3854) 12%, transparent);
+  color: var(--text-muted);
+}
+.conn-related-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 16px 0 8px;
+}
+.conn-related {
+  display: grid;
+  gap: 6px;
+}
+.conn-related-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: border-color 0.12s var(--ease-out), background 0.12s var(--ease-out);
+}
+.conn-related-item:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+}
+.conn-related-title {
+  font-size: 13.5px;
+  color: var(--text);
+  flex-shrink: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conn-related-shared {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+/* ── Connections: entity-centric layout ─────────────────────────────── */
+.conn-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.conn-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+}
+.conn-group-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 8px 6px;
+}
+.conn-entity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
+}
+.conn-entity:hover { background: var(--bg-hover); color: var(--text); }
+.conn-entity.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.conn-entity-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conn-entity-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.conn-entity.active .conn-entity-count { color: var(--accent); }
+
+.conn-detail { min-width: 0; }
+.conn-detail-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.conn-detail-sub {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+.conn-chip.clickable { cursor: pointer; border: none; }
+.conn-chip.clickable:hover { filter: brightness(0.96); }
+.conn-chip-count {
+  margin-left: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* ── Meeting detail: related-meetings strip ─────────────────────────── */
+.md-related {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+}
+.md-related-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  padding-top: 7px;
+}
+.md-related-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  flex: 1;
+}
+.md-related-pill {
+  flex-shrink: 0;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+  text-align: left;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.12s var(--ease-out), background 0.12s var(--ease-out);
+}
+.md-related-pill:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+}
+.md-related-pill-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  max-width: 256px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.md-related-pill-shared {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── Library: project filter chips ──────────────────────────────────── */
+.lib-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.lib-filter-chip {
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s var(--ease-out);
+}
+.lib-filter-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.lib-filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Connections: force graph canvas ────────────────────────────────── */
+.conn-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+.conn-canvas:active { cursor: grabbing; }
+
+/* Inline "+ 프로젝트" add-link next to a field label */
+.label-add {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.label-add:hover { color: var(--accent-hover); }
+
+/* ── Generic modal popup ────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 24, 34, 0.32);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: fade-up 0.14s var(--ease-out);
+}
+.modal-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+.modal-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ── Library console (project rail + meeting grid) ──────────────────── */
+.lib-console {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  height: 100%;
+}
+.lib-rail {
+  border-right: 1px solid var(--border);
+  padding: var(--space-5) 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 10px;
+}
+.lib-rail-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.lib-rail-row {
+  display: flex;
+  align-items: center;
+}
+.lib-rail-item {
+  width: 100%;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
+}
+/* Inside a project row (flex-row + delete button), fill width not height. */
+.lib-rail-row .lib-rail-item { flex: 1 1 auto; width: auto; }
+.lib-rail-item:hover { background: var(--bg-hover); color: var(--text); }
+.lib-rail-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.lib-rail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-rail-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.lib-rail-item.active .lib-rail-count { color: var(--accent); }
+.lib-rail-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity 0.12s var(--ease-out), color 0.12s var(--ease-out);
+}
+.lib-rail-row:hover .lib-rail-del { opacity: 1; }
+.lib-rail-del:hover { color: var(--danger); background: var(--danger-soft); }
+.lib-console-main {
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+/* Right-pane header in library console (project name + delete) */
+.lib-console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.lib-console-head-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.lib-proj-del { color: var(--danger); font-size: 12.5px; }
+.lib-proj-del:hover { background: var(--danger-soft); }
+
+/* ── Calendar ───────────────────────────────────────────────────────── */
+.cal-nav { display: inline-flex; align-items: center; gap: 2px; }
+.cal-nav button {
+  background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-muted); cursor: pointer; font-size: 14px; line-height: 1;
+  width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+}
+.cal-nav .cal-today { width: auto; padding: 0 10px; font-size: 12px; }
+.cal-nav button:hover { background: var(--bg-hover); color: var(--text); }
+.cal-month { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+
+.cal-layout { display: grid; grid-template-columns: 1fr 264px; height: 100%; }
+.cal-grid-wrap { display: flex; flex-direction: column; padding: var(--space-5); min-width: 0; overflow: hidden; }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+.cal-weekday { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-faint); padding: 4px 0; }
+.cal-weekday.sun { color: #d06262; }
+.cal-weekday.sat { color: #5b8ef0; }
+.cal-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 4px;
+  min-height: 0;
+}
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  text-align: left;
+  background: var(--bg-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 5px 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.12s var(--ease-out), background 0.12s var(--ease-out);
+}
+.cal-cell:hover { border-color: var(--border-strong); }
+.cal-cell.dim { opacity: 0.4; }
+.cal-cell.selected { border-color: var(--accent); background: var(--accent-soft); }
+.cal-daynum { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.cal-cell.today .cal-daynum {
+  background: var(--accent); color: #fff; border-radius: 999px;
+  width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+}
+.cal-marks { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.cal-mark {
+  font-size: 10px; line-height: 1.3; padding: 1px 5px; border-radius: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-mark.meeting { background: color-mix(in srgb, var(--text-muted) 16%, transparent); color: var(--text-muted); }
+.cal-mark.event { background: var(--accent-soft); color: var(--accent); }
+.cal-mark.event.auto { background: color-mix(in srgb, #b8732e 18%, transparent); color: #b8732e; }
+.cal-more { font-size: 9.5px; color: var(--text-faint); padding-left: 5px; }
+
+.cal-detail { border-left: 1px solid var(--border); padding: var(--space-5); overflow-y: auto; }
+.cal-detail-head { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin-bottom: 14px; }
+.cal-item {
+  display: block; width: 100%; text-align: left;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; cursor: default;
+}
+.cal-item.meeting { cursor: pointer; }
+.cal-item.meeting:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+.cal-item-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.cal-item-time { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+.cal-badge {
+  font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in srgb, #b8732e 18%, transparent); color: #b8732e;
+}
+.cal-badge.done { background: var(--success-soft); color: var(--success); }
+.cal-item-del {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 11px; padding: 2px 4px; border-radius: 4px;
+}
+.cal-item-del:hover { color: var(--danger); background: var(--danger-soft); }
+.cal-item-title { font-size: 13px; font-weight: 500; color: var(--text); }
+.cal-item-sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.cal-item-link {
+  margin-top: 6px; background: none; border: none; padding: 0; cursor: pointer;
+  font-size: 11.5px; color: var(--accent); font-weight: 600;
+}
+
+/* Calendar: project-colored chips + legend */
+.cal-mark.past { opacity: 0.72; }  /* past meetings slightly muted vs upcoming */
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 2px 2px;
+  margin-top: 6px;
+}
+.cal-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.cal-legend-item i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Connections: edge hover tooltip (shared entities) */
+.conn-tip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  max-width: 220px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.conn-tip-label {
+  width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+.conn-tip-item {
+  font-size: 11.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Connections: zoom controls */
+.conn-zoom {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+}
+.conn-zoom button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
+}
+.conn-zoom button:hover { background: var(--bg-hover); color: var(--text); }

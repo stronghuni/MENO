@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { Meeting, ProcessingStatus, TranscriptSegment } from '../../../shared/types'
+import type {
+  Meeting,
+  ProcessingStatus,
+  RelatedMeeting,
+  TranscriptSegment
+} from '../../../shared/types'
 import { getApi } from '../lib/api'
 import AudioPlayer from '../components/AudioPlayer'
 
@@ -38,6 +43,7 @@ export default function MeetingDetail(): React.JSX.Element {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
   const [notesDraft, setNotesDraft] = useState('')
+  const [related, setRelated] = useState<RelatedMeeting[]>([])
   const notesDirty = useRef(false)
 
   useEffect(() => {
@@ -52,6 +58,7 @@ export default function MeetingDetail(): React.JSX.Element {
       }
     })
     void api.processing.status(id).then(setStatus)
+    void api.graph.related(id).then(setRelated)
   }, [id])
 
   useEffect(() => {
@@ -76,6 +83,8 @@ export default function MeetingDetail(): React.JSX.Element {
           setMeeting(m)
           if (m && !notesDirty.current) setNotesDraft(m.notesMd ?? '')
         })
+        // Graph is indexed at the end of the pipeline — refresh related.
+        if (s.stage === 'done') void api.graph.related(id!).then(setRelated)
       }
     })
     return unsubscribe
@@ -203,9 +212,9 @@ export default function MeetingDetail(): React.JSX.Element {
           <button
             type="button"
             className="btn btn-ghost"
-            onClick={() => navigate('/library')}
-            aria-label="라이브러리로"
-            title="라이브러리로 돌아가기"
+            onClick={() => navigate(-1)}
+            aria-label="뒤로"
+            title="이전 페이지로"
             style={{ width: 28, height: 28, padding: 0 }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -318,7 +327,7 @@ export default function MeetingDetail(): React.JSX.Element {
           <div
             style={{
               display: 'grid',
-              gridTemplateRows: 'auto 1fr',
+              gridTemplateRows: related.length > 0 ? 'auto 1fr auto' : 'auto 1fr',
               gap: 16,
               height: '100%'
             }}
@@ -480,6 +489,32 @@ export default function MeetingDetail(): React.JSX.Element {
               )}
             </section>
             </div>
+
+            {related.length > 0 && (
+              <div className="md-related">
+                <span className="md-related-label">관련 회의</span>
+                <div className="md-related-list">
+                  {related.map((r) => (
+                    <button
+                      key={r.id}
+                      className="md-related-pill"
+                      onClick={() => navigate(`/meeting/${r.id}`)}
+                      title={r.shared.map((e) => e.name).join(', ')}
+                    >
+                      <span className="md-related-pill-title">{r.title}</span>
+                      <span className="md-related-pill-shared">
+                        {r.shared.slice(0, 3).map((e, i) => (
+                          <span key={i} className={`conn-chip ${e.type}`}>
+                            {e.type === 'person' ? '@' : '#'}
+                            {e.name}
+                          </span>
+                        ))}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

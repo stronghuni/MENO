@@ -16,7 +16,14 @@ import {
   deleteMeetings,
   getMeeting,
   listMeetings,
-  updateMeeting
+  updateMeeting,
+  listProjects as listAppProjects,
+  createProject,
+  deleteProject,
+  listEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent
 } from './services/storage'
 import {
   appendChunk,
@@ -34,10 +41,22 @@ import { deleteSecret, getSecret, hasSecret, setSecret, SecretKey } from './serv
 import { loadSettings, saveSettings, Settings } from './services/settings'
 import { searchDatabases, uploadMeeting } from './services/notion'
 import { testJira, listProjects, listIssueTypes, exportActionItems } from './services/jira'
+import {
+  getConnections,
+  getRelatedMeetings,
+  getMeetingEntities,
+  getEntityIndex,
+  rebuildGraph
+} from './services/graph'
 import { cancelDownload, downloadModel, MODEL_SPECS, ModelSpec } from './services/downloader'
 import { dialog, shell } from 'electron'
 import { copyFileSync, existsSync, writeFileSync } from 'fs'
-import type { Meeting, RecordingStartParams } from '../shared/types'
+import type {
+  Meeting,
+  RecordingStartParams,
+  ScheduledEvent,
+  CreateEventInput
+} from '../shared/types'
 
 export type Handler = (...args: unknown[]) => unknown
 
@@ -46,7 +65,31 @@ export const handlers: Record<string, Handler> = {
   'meetings:list': () => listMeetings(),
   'meetings:get': (id) => getMeeting(id as string),
   'meetings:create': (input) =>
-    createMeeting(input as string | { title: string; startedAt?: number; attendees?: string[] }),
+    createMeeting(
+      input as
+        | string
+        | { title: string; startedAt?: number; attendees?: string[]; projectId?: string | null }
+    ),
+
+  // ── calendar events ─────────────────────────────────────────────────────
+  'events:list': () => listEvents(),
+  'events:create': (input) => createEvent(input as CreateEventInput),
+  'events:update': (id, patch) => {
+    updateEvent(id as string, patch as Partial<ScheduledEvent>)
+    return null
+  },
+  'events:delete': (id) => {
+    deleteEvent(id as string)
+    return null
+  },
+
+  // ── projects ────────────────────────────────────────────────────────────
+  'projects:list': () => listAppProjects(),
+  'projects:create': (name, color) => createProject(name as string, color as string | null),
+  'projects:delete': (id) => {
+    deleteProject(id as string)
+    return null
+  },
   'meetings:update': (id, patch) => updateMeeting(id as string, patch as Partial<Meeting>),
   'meetings:delete': (id) => {
     deleteMeeting(id as string)
@@ -105,6 +148,13 @@ export const handlers: Record<string, Handler> = {
   'jira:projects': () => listProjects(),
   'jira:issueTypes': (projectKey) => listIssueTypes(projectKey as string),
   'jira:export': (meetingId) => exportActionItems(meetingId as string),
+
+  // ── relationship graph (related meetings) ───────────────────────────────
+  'graph:connections': () => getConnections(),
+  'graph:related': (meetingId) => getRelatedMeetings(meetingId as string),
+  'graph:entities': (meetingId) => getMeetingEntities(meetingId as string),
+  'graph:entityIndex': () => getEntityIndex(),
+  'graph:rebuild': () => rebuildGraph(),
 
   // ── downloads ─────────────────────────────────────────────────────────
   'downloads:specs': () => MODEL_SPECS,

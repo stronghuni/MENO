@@ -7,6 +7,9 @@ import { hasSecret } from './keychain'
 import { loadSettings } from './settings'
 import { uploadMeeting } from './notion'
 import { exportActionItems } from './jira'
+import { indexMeeting } from './graph'
+import { extractNextMeeting } from './nextMeeting'
+import { createEvent } from './storage'
 import type { ProcessingStatus, TranscriptSegment } from '../../shared/types'
 
 const active = new Map<string, ProcessingStatus>()
@@ -196,6 +199,36 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
         console.warn('Auto-export to Jira failed:', message)
         // Non-fatal: fall through to done. The user can retry manually.
       }
+    }
+
+    // ── Index into the relationship graph ───────────────────────────────
+    // Fold attendees + tags + an LLM pass over the notes into the meeting
+    // graph so it shows up in "관련 회의". Non-fatal — purely additive.
+    try {
+      await indexMeeting(meetingId, { llm: true })
+    } catch (e) {
+      console.warn('Graph indexing failed:', e)
+    }
+
+    // ── Auto-register the next meeting on the calendar ───────────────────
+    // If the notes name a concrete follow-up date, drop it on the calendar
+    // (tagged auto, linked to this meeting). Non-fatal; users can delete.
+    try {
+      const m = getMeeting(meetingId)
+      if (m?.notesMd) {
+        const next = await extractNextMeeting(m.notesMd, new Date(m.startedAt), m.title)
+        if (next) {
+          createEvent({
+            title: next.title,
+            scheduledAt: next.scheduledAt,
+            projectId: m.projectId,
+            sourceMeetingId: meetingId,
+            auto: true
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Next-meeting auto-register failed:', e)
     }
 
     broadcast({ meetingId, stage: 'done', partialSegments: segments })
