@@ -1,0 +1,11 @@
+# Only site/ is deployed (the project's Root Directory). Everything the
+# desktop build produces is gitignored, so Git deployments never see it —
+# but `vercel --prod` from this directory uploads the working tree as-is
+# and the DMGs blow past Vercel's 100 MB per-file limit.
+dist
+out
+node_modules
+resources
+src
+build
+scripts
