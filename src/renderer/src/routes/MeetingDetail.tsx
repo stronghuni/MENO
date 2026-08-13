@@ -106,6 +106,7 @@ export default function MeetingDetail(): React.JSX.Element {
     !!status &&
     (status.stage === 'summarizing' ||
       (status.stage === 'uploading' && !meeting?.notesMd))
+  const pipelineRunning = !!status && status.stage !== 'done' && status.stage !== 'error'
 
   const runAction = async (fn: () => Promise<void>): Promise<void> => {
     setActionError(null)
@@ -174,6 +175,29 @@ export default function MeetingDetail(): React.JSX.Element {
       const api = getApi()
       if (!api) return
       await api.shell.downloadAudio(id)
+    })
+
+  const reprocess = (): Promise<void> =>
+    runAction(async () => {
+      if (!id) return
+      const api = getApi()
+      if (!api) return
+      if (!confirm('전사와 회의록을 다시 생성할까요? 지금 저장된 회의록은 덮어씌워집니다.')) return
+      await api.processing.reprocess(id)
+      // The handler kicks the pipeline off fire-and-forget, so nothing is
+      // broadcast until Whisper actually starts. Seed the stage ourselves
+      // or the panes sit on stale 'done' state for a few seconds.
+      setStatus({ meetingId: id, stage: 'preparing', message: '다시 처리 중…' })
+    })
+
+  const openRecordingFolder = (): Promise<void> =>
+    runAction(async () => {
+      const api = getApi()
+      if (!api || !meeting?.audioPath) return
+      // Reveal the containing folder rather than the .wav — openPath on the
+      // file hands it to whatever plays audio, and the inline player above
+      // already covers listening.
+      await api.shell.openPath(meeting.audioPath.replace(/[^/\\]+$/, ''))
     })
 
   const exportNotes = (format: 'md' | 'docx'): Promise<void> =>
@@ -290,6 +314,16 @@ export default function MeetingDetail(): React.JSX.Element {
                 label: '오디오 파일 다운로드',
                 disabled: !meeting?.audioPath,
                 onClick: downloadAudio
+              },
+              {
+                label: '녹음 파일 위치 열기',
+                disabled: !meeting?.audioPath,
+                onClick: openRecordingFolder
+              },
+              {
+                label: pipelineRunning ? '처리 중…' : '전사·회의록 다시 생성',
+                disabled: !meeting?.audioPath || pipelineRunning,
+                onClick: reprocess
               },
               {
                 label: '회의록 내보내기',

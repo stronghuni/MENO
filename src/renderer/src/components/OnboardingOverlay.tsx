@@ -34,6 +34,11 @@ export default function OnboardingOverlay({
   const [models, setModels] = useState<ModelStatus | null>(null)
   const [autoStarted, setAutoStarted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Aborting the fetch makes the downloader broadcast a generic failure, so
+  // remember which keys the user stopped on purpose and label those rows
+  // "취소됨" instead of "✗ 실패". The `.partial` file is left on disk, which
+  // is what lets 이어받기 resume instead of restarting the multi-GB fetch.
+  const [canceled, setCanceled] = useState<Record<string, boolean>>({})
 
   const refresh = async (): Promise<void> => {
     const api = getApi()
@@ -89,6 +94,24 @@ export default function OnboardingOverlay({
     return sum + (p ? p.bytesReceived : 0)
   }, 0)
   const overallPct = totalBytes > 0 ? Math.min(100, (receivedBytes / totalBytes) * 100) : 0
+
+  const cancel = async (key: ModelSpec['key']): Promise<void> => {
+    const api = getApi()
+    if (!api) return
+    setCanceled((c) => ({ ...c, [key]: true }))
+    await api.downloads.cancel(key)
+  }
+
+  const resume = async (key: ModelSpec['key']): Promise<void> => {
+    const api = getApi()
+    if (!api) return
+    setCanceled((c) => ({ ...c, [key]: false }))
+    try {
+      await api.downloads.start(key)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
 
   const dismiss = async (markComplete: boolean): Promise<void> => {
     const api = getApi()
@@ -184,7 +207,8 @@ export default function OnboardingOverlay({
             const done = models ? isModelInstalled(models, spec.key) : false
             const pct = done ? 100 : p ? Math.min(100, (p.bytesReceived / p.totalBytes) * 100) : 0
             const isActive = !done && p && !p.done
-            const hasError = p?.error
+            const wasCanceled = !done && canceled[spec.key]
+            const hasError = p?.error && !wasCanceled
             return (
               <div
                 key={spec.key}
@@ -210,8 +234,34 @@ export default function OnboardingOverlay({
                     flexShrink: 0
                   }}
                 >
-                  {done ? '✓ 완료' : hasError ? '✗ 실패' : isActive ? `${pct.toFixed(0)}%` : '대기'}
+                  {done
+                    ? '✓ 완료'
+                    : hasError
+                      ? '✗ 실패'
+                      : wasCanceled
+                        ? '취소됨'
+                        : isActive
+                          ? `${pct.toFixed(0)}%`
+                          : '대기'}
                 </span>
+                {isActive && (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ flexShrink: 0, padding: '2px 10px', fontSize: 11 }}
+                    onClick={() => void cancel(spec.key)}
+                  >
+                    취소
+                  </button>
+                )}
+                {wasCanceled && (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ flexShrink: 0, padding: '2px 10px', fontSize: 11 }}
+                    onClick={() => void resume(spec.key)}
+                  >
+                    이어받기
+                  </button>
+                )}
               </div>
             )
           })}
