@@ -4,6 +4,20 @@ All notable changes to Meeting Notes are documented here. Format roughly follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-13
+
+### Added
+- Windows installer. `npm run build:win` already produced an NSIS setup, but the native modules made it unbuildable from macOS — smart-whisper ships no prebuilds and compiles whisper.cpp through node-gyp, so it needs the MSVC toolchain. CI gained a `windows-latest` job that builds and uploads `meno-<version>-setup.exe`, plus `workflow_dispatch` so a build can be pulled off a branch without cutting a tag.
+- "녹음 파일 위치 열기" and "전사·회의록 다시 생성" in the meeting-detail ⋯ menu, and per-model 취소 / 이어받기 during onboarding downloads. All three had complete handlers with no way to reach them from the UI; 이어받기 resumes from the `.partial` file rather than re-fetching 4.4 GB.
+
+### Fixed
+- Chat scoped to a meeting failed outright with "생성에 실패했습니다: The default context shift strategy did not return a history that fits the context size". The system prompt embedded the meeting's full transcript on a 12 000-character budget, which at Korean's measured 1.43 chars per Qwen token came to 8 368 tokens — past the 7 373 usable in an 8192 context. Chat now feeds the notes only and runs a 16384 context.
+- The attendee fallback in `processRecording` collected `segment.speaker`, always `null` since diarization was removed, so it could never contribute anything.
+- Every processing status stayed resident with its `partialSegments`, pinning each session's transcripts in memory. Terminal stages now retain the status without the transcript.
+
+### Removed
+- Dead code found in a full-tree audit: `transcribeWav` (superseded by `transcribeWavChunked`), `unloadModel`, `getConnections` and the `graph:connections` channel, the orphaned `LevelMeter` component, `stopScheduler`, `stopDevBridge`, `isElectron`, `resolveEffective`, the `searchDatabases` alias, duplicate `SecretKey`/`ThemeMode` definitions, the unused `huggingface.token` secret key, and 44 unreferenced CSS classes.
+
 ## [0.1.0] — 2026-05-21
 
 First working build. End-to-end flow: mic → on-device transcription → speaker diarization → LLM-generated meeting notes → Notion DB upload.
