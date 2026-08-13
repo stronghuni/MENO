@@ -1,411 +1,743 @@
 <!doctype html>
-<html lang="ko" data-theme="light">
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MENO — 느긋한 친구가 회의록은 알아서 챙겨줘요</title>
+    <title>MENO — 회의록은 알아서 챙길게요</title>
     <meta
       name="description"
-      content="대면 회의를 자동으로 회의록화하는 macOS · Windows 데스크톱 앱. 녹음 → 한국어 전사 → 회의록 작성 → Notion 업로드, 전부 당신의 컴퓨터 안에서. 로컬·무료·비공개."
+      content="회의를 녹음하고 한국어로 받아 적어 구조화된 회의록을 만드는 로컬 데스크톱 앱. 무료, 비공개, macOS·Windows 지원."
     />
-    <meta property="og:title" content="MENO — 회의록은 알아서 챙기는 데스크톱 앱" />
+    <meta property="og:title" content="MENO — 회의록은 알아서 챙길게요" />
     <meta
       property="og:description"
-      content="녹음 → 한국어 전사 → 회의록 → Notion, 전부 로컬에서. Whisper + Qwen으로 비공개·무료."
+      content="녹음부터 전사, 회의록, Notion·Jira 연동까지. 모든 처리는 내 컴퓨터 안에서."
     />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/icon.png" />
-    <script>
-      document.documentElement.classList.add("js");
-    </script>
     <link rel="icon" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <!-- Nav -->
-    <nav class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/" aria-label="MENO 홈">
-          <img src="/icon.png" alt="MENO 마스코트" />
-          <span class="brand-name">MENO</span>
-        </a>
-        <div class="nav-links">
-          <a href="#features">기능</a>
-          <a href="#how">사용법</a>
-          <a href="#docs">설치 가이드</a>
-          <a href="https://github.com/stronghuni/MENO" target="_blank" rel="noopener">GitHub</a>
-          <button class="theme-toggle" id="themeToggle" aria-label="테마 전환" title="라이트/다크 전환">☀︎</button>
-          <a class="nav-cta" href="#download">다운로드</a>
-        </div>
-      </div>
-    </nav>
+    <a class="skip-link" href="#stage">중앙 기능 무대로 이동</a>
 
-    <!-- Hero -->
-    <header class="hero">
-      <div class="wrap hero-grid">
-        <div>
-          <span class="pill reveal" style="--d: 0.05s">🦥 로컬 · 무료 · 비공개</span>
-          <h1 class="reveal" style="--d: 0.12s">
-            회의록은<br />
-            알아서 챙길게요.
-            <svg class="underline-ink" viewBox="0 0 320 16" aria-hidden="true">
-              <path d="M4 10C58 3 120 14 172 7s108-7 144 2" />
-            </svg>
-          </h1>
-          <p class="lede reveal" style="--d: 0.2s">
-            느긋한 친구처럼, MENO가 회의를 녹음하고 한국어로 받아 적고 깔끔한 회의록까지 써둡니다.
-          </p>
-          <p class="sub reveal" style="--d: 0.27s">
-            <b>마이크 녹음</b>도, 이미 가진 <b>mp3·wav·mp4 파일 업로드</b>도. 회의록은 토큰
-            단위로 실시간으로 채워지고, 음성·전사·요약 전 과정이 당신의 컴퓨터 안에서만 돌아갑니다.
-          </p>
-          <div class="hero-cta reveal" style="--d: 0.34s">
-            <a class="btn btn-accent" href="#download">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
-              무료 다운로드 <small>v0.5.0 · macOS · Windows</small>
-            </a>
-            <a class="btn" href="https://github.com/stronghuni/MENO" target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 1.7 2.7 1.2 3.3.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.8 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
-              소스 보기
-            </a>
-          </div>
-          <span class="scribble cta-note reveal" style="--d: 0.4s" aria-hidden="true">↖ 클릭 한 번이면 끝!</span>
-          <div class="trust reveal" style="--d: 0.42s">
-            <span><i class="dot"></i> API 키·로그인 불필요</span>
-            <span><i class="dot"></i> 데이터 외부 전송 없음</span>
-            <span><i class="dot"></i> macOS · Windows</span>
-          </div>
-        </div>
-        <div class="hero-art reveal" style="--d: 0.3s">
-          <div class="mascot-card">
-            <span class="tape" aria-hidden="true"></span>
-            <img src="/icon.png" alt="메모지와 파란 연필을 든 나무늘보 마스코트" />
-            <span class="float-chip a">🎙️ 녹음 중…</span>
-            <span class="float-chip b">📝 회의록 작성 완료</span>
-            <span class="float-chip c">🔗 관계 그래프</span>
-          </div>
-        </div>
-      </div>
-    </header>
+    <button
+      class="privacy-trigger"
+      type="button"
+      data-panel="privacy"
+      aria-haspopup="dialog"
+      aria-label="MENO의 로컬 처리와 개인정보 보호 방식 보기"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="10" width="14" height="10" rx="3" />
+        <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
+        <circle cx="12" cy="15" r="1.2" />
+      </svg>
+      <span>로컬 · 무료 · 비공개</span>
+    </button>
 
-    <!-- Features -->
-    <section id="features">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <span class="eyebrow">기능</span>
-          <h2>회의 하나에 필요한 <span class="hl">전부</span></h2>
-          <p>전사부터 회의록, 관계 그래프, 일정 관리까지 — 클라우드 없이 내 컴퓨터 한 대로.</p>
-        </div>
-        <div class="features">
-          <div class="feature reveal" style="--d: 0s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg></span>
-            <h3>로컬 STT</h3>
-            <p>Whisper Large-v3 Turbo로 한국어를 정밀하게 받아 적습니다. Metal GPU 가속, 1시간+ 회의는 자동 청크 처리.</p>
-          </div>
-          <div class="feature reveal" style="--d: 0.07s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></span>
-            <h3>기존 파일 업로드</h3>
-            <p>mp3·wav·m4a·flac·mp4·mov·avi·mkv까지 — 이미 녹음해 둔 회의 파일을 드래그하면 자동으로 16kHz로 변환·전사·회의록 작성.</p>
-          </div>
-          <div class="feature reveal" style="--d: 0.14s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h6M8 17h4"/></svg></span>
-            <h3>실시간 회의록 작성</h3>
-            <p>Qwen 2.5-7B가 TL;DR·안건·논의·결정·액션 아이템을 표준 포맷으로 토큰 단위 스트리밍 — 회의록이 채워지는 모습을 그대로 봅니다. 무음 환각 방지 가드 포함.</p>
-          </div>
-          <div class="feature reveal" style="--d: 0s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8 7.5 15.5 8M8 8 9.5 15.5"/></svg></span>
-            <h3>관계 그래프</h3>
-            <p>회의가 쌓이면 참석자·주제가 겹치는 회의끼리 자동으로 이어집니다. 옵시디언 스타일 그래프로 한눈에.</p>
-          </div>
-          <div class="feature reveal" style="--d: 0.07s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
-            <h3>캘린더 · 일정</h3>
-            <p>회의록에서 다음 회의를 알아서 찾아 캘린더에 등록하고, 시작 10분 전 알림을 띄웁니다.</p>
-          </div>
-          <div class="feature reveal" style="--d: 0.14s">
-            <span class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg></span>
-            <h3>Notion · Jira 연동</h3>
-            <p>완성된 회의록을 Notion에 한 행으로 업로드하고, 액션 아이템을 Jira 이슈로 내보냅니다. 토큰은 Keychain에.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <main class="scene" id="stage">
+      <h1 class="sr-only">회의록은 알아서 챙기는 로컬 데스크톱 앱, MENO</h1>
 
-    <svg class="divider" viewBox="0 0 1120 22" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0 14C140 4 260 20 400 12s260-14 380-6 240 16 340 6" />
-    </svg>
+      <div class="stage-wrap" aria-label="MENO 사이트의 네 가지 주요 안내">
+        <div class="object-row">
+          <button
+            class="stage-object stage-object--capture"
+            type="button"
+            data-panel="features"
+            data-kicker="01 · FEATURES"
+            data-title="회의 하나에 필요한 전부."
+            data-description="녹음·전사·AI 회의록·연동 기능을 한곳에서 살펴보세요."
+            aria-haspopup="dialog"
+            aria-label="MENO 기능 보기"
+          >
+            <span class="object-art capture-art" aria-hidden="true">
+              <span class="object-float">
+                <picture>
+                  <source srcset="/assets/hero/capture-sloth.webp" type="image/webp" />
+                  <img
+                    src="/assets/hero/capture-sloth.png"
+                    alt=""
+                    width="1254"
+                    height="1254"
+                    draggable="false"
+                  />
+                </picture>
+              </span>
+            </span>
+            <span class="object-label"><strong>기능</strong><small>끌어보기 · 열기</small></span>
+          </button>
 
-    <!-- How it works -->
-    <section id="how">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <span class="eyebrow">사용법</span>
-          <h2>받고, 모델 한 번 내려받고, <span class="hl">녹음</span></h2>
-          <p>설정은 처음 3단계뿐. 그다음부터는 버튼 하나면 회의록이 나옵니다.</p>
+          <button
+            class="stage-object stage-object--transcribe"
+            type="button"
+            data-panel="how"
+            data-kicker="02 · HOW IT WORKS"
+            data-title="받고, 모델 한 번, 녹음."
+            data-description="설치부터 첫 회의록까지 세 단계면 충분합니다."
+            aria-haspopup="dialog"
+            aria-label="MENO 사용법 보기"
+          >
+            <span class="object-art transcribe-art" aria-hidden="true">
+              <span class="object-float">
+                <picture>
+                  <source srcset="/assets/hero/transcribe-cloud.webp" type="image/webp" />
+                  <img
+                    src="/assets/hero/transcribe-cloud.png"
+                    alt=""
+                    width="1402"
+                    height="1122"
+                    draggable="false"
+                  />
+                </picture>
+              </span>
+            </span>
+            <span class="object-label"><strong>사용법</strong><small>끌어보기 · 열기</small></span>
+          </button>
+
+          <button
+            class="stage-object stage-object--notes"
+            type="button"
+            data-panel="download"
+            data-kicker="03 · DOWNLOAD"
+            data-title="내 컴퓨터에 맞는 MENO."
+            data-description="Apple Silicon, Intel Mac, Windows용 설치 파일을 바로 받으세요."
+            aria-haspopup="dialog"
+            aria-label="MENO 다운로드 보기"
+          >
+            <span class="object-art notes-art" aria-hidden="true">
+              <span class="object-float">
+                <picture>
+                  <source srcset="/assets/hero/notes-sloth.webp" type="image/webp" />
+                  <img
+                    src="/assets/hero/notes-sloth.png"
+                    alt=""
+                    width="1254"
+                    height="1254"
+                    draggable="false"
+                  />
+                </picture>
+              </span>
+            </span>
+            <span class="object-label"
+              ><strong>다운로드</strong><small>끌어보기 · 열기</small></span
+            >
+          </button>
+
+          <button
+            class="stage-object stage-object--connect"
+            type="button"
+            data-panel="docs"
+            data-kicker="04 · SETUP GUIDE"
+            data-title="처음 한 번만, 차근차근."
+            data-description="macOS 보안 안내부터 Windows 설치와 로컬 데이터 위치까지 정리했습니다."
+            aria-haspopup="dialog"
+            aria-label="MENO 설치 가이드 보기"
+          >
+            <span class="object-art connect-art" aria-hidden="true">
+              <span class="object-float">
+                <picture>
+                  <source srcset="/assets/hero/connect-orbit.webp" type="image/webp" />
+                  <img
+                    src="/assets/hero/connect-orbit.png"
+                    alt=""
+                    width="1254"
+                    height="1254"
+                    draggable="false"
+                  />
+                </picture>
+              </span>
+            </span>
+            <span class="object-label"
+              ><strong>설치 가이드</strong><small>끌어보기 · 열기</small></span
+            >
+          </button>
         </div>
-        <div class="steps">
-          <div class="step reveal" style="--d: 0s">
-            <span class="num">1</span>
-            <h3>다운로드 &amp; 설치</h3>
-            <p>DMG를 열고 MENO를 Applications로 드래그. 처음 한 번 격리 해제 명령만 실행하면 됩니다.</p>
-          </div>
-          <div class="step reveal" style="--d: 0.08s">
-            <span class="num">2</span>
-            <h3>모델 자동 다운로드</h3>
-            <p>첫 실행 시 온보딩이 Whisper + Qwen 모델(약 6.3GB)을 내려받습니다. 끊겨도 이어받기.</p>
-          </div>
-          <div class="step reveal" style="--d: 0.16s">
-            <span class="num">3</span>
-            <h3>녹음 또는 파일 업로드</h3>
-            <p>마이크로 녹음하거나, 가진 mp3·mp4 파일을 드래그. 끝나면 전사 → 회의록 → (켜둔 경우) Notion 업로드까지 자동.</p>
-          </div>
-        </div>
-        <div class="reveal" style="max-width: 720px; margin: 30px auto 0">
-          <div class="code">
-            <span class="prompt">$</span>
-            <code id="cmd-run">xattr -dr com.apple.quarantine /Applications/MENO.app</code>
-            <button class="copy" data-copy="#cmd-run">복사</button>
-          </div>
-          <p class="dl-hint" style="margin-top: 12px">
-            미공증 빌드라 처음 열 때 한 번만 격리(quarantine) 속성을 풀어주면 이후로는 그냥 실행됩니다.
+
+        <div class="stage-caption" aria-live="polite">
+          <span class="stage-kicker" id="stageKicker">MENO · CALM COMPANION</span>
+          <p class="stage-title" id="stageTitle" data-pretext>회의록은 알아서 챙길게요.</p>
+          <p class="stage-description" id="stageDescription" data-pretext>
+            녹음부터 정리까지, 모든 처리는 당신의 컴퓨터 안에서 차근차근.
           </p>
         </div>
       </div>
-    </section>
+    </main>
 
-    <!-- Download -->
-    <section id="download">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <span class="eyebrow">다운로드</span>
-          <h2>내 컴퓨터에 맞는 버전을 <span class="hl">받으세요</span></h2>
-          <p>macOS 12(Monterey) 이상 또는 Windows 10/11 64비트. 첫 실행 시 모델용 디스크 여유 약 8GB가 필요합니다.</p>
-        </div>
-        <div class="dl-grid">
-          <div class="dl-card reveal" style="--d: 0s">
-            <span class="chip-kind">Apple Silicon</span>
-            <h3>M1 ~ M4</h3>
-            <p class="meta">meno-0.5.0-arm64.dmg · 168&nbsp;MB</p>
-            <a class="btn btn-accent" href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-arm64.dmg">
-              arm64 DMG 다운로드
-            </a>
-          </div>
-          <div class="dl-card reveal" style="--d: 0.08s">
-            <span class="chip-kind">Intel</span>
-            <h3>인텔 맥</h3>
-            <p class="meta">meno-0.5.0-x64.dmg · 174&nbsp;MB</p>
-            <a class="btn" href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-x64.dmg">
-              x64 DMG 다운로드
-            </a>
-          </div>
-          <div class="dl-card reveal" style="--d: 0.16s">
-            <span class="chip-kind">Windows</span>
-            <h3>10 · 11 (64비트)</h3>
-            <p class="meta">meno-0.5.0-setup.exe · 387&nbsp;MB</p>
-            <a class="btn" href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-setup.exe">
-              설치 파일 다운로드
-            </a>
-          </div>
-        </div>
-        <p class="dl-hint reveal">
-          내 맥이 어느 쪽인지 모르겠다면 — 좌상단  → <b>이 Mac에 관하여</b> → 칩이
-          <kbd>Apple M…</kbd>이면 Apple Silicon입니다. ·
-          <a href="https://github.com/stronghuni/MENO/releases/latest" target="_blank" rel="noopener">모든 릴리스 보기</a>
-        </p>
-      </div>
-    </section>
-
-    <svg class="divider" viewBox="0 0 1120 22" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0 8C140 18 260 2 400 10s260 14 380 6 240-16 340-6" />
-    </svg>
-
-    <!-- Docs -->
-    <section id="docs">
-      <div class="wrap">
-        <div class="section-head reveal">
-          <span class="eyebrow">설치 가이드</span>
-          <h2>처음 한 번만, <span class="hl">차근차근</span></h2>
-        </div>
-        <div class="docs">
-          <div class="reveal">
-            <h3>맥에서 받아서 바로 쓰기</h3>
-            <ol>
-              <li><b>DMG 다운로드</b> — 위에서 맥 종류에 맞는 파일을 받습니다.</li>
-              <li><b>설치</b> — DMG를 더블클릭해 열고 <b>MENO</b>를 <b>Applications</b> 폴더로 드래그.</li>
-              <li>
-                <b>Gatekeeper 한 번 풀기</b> — 미공증 빌드라 처음 열 때 막힙니다. 터미널에 아래
-                한 줄을 실행하세요.
-              </li>
-            </ol>
-            <div class="code">
-              <span class="prompt">$</span>
-              <code id="cmd-run2">xattr -dr com.apple.quarantine /Applications/MENO.app</code>
-              <button class="copy" data-copy="#cmd-run2">복사</button>
-            </div>
-            <ol start="4" style="margin-top: 16px">
-              <li><b>마이크 권한</b> — 첫 녹음 시 접근을 허용합니다.</li>
-              <li><b>모델 다운로드</b> — 온보딩이 Whisper(1.6GB) + Qwen(4.7GB)을 자동으로 받습니다. 끝나면 바로 녹음.</li>
-            </ol>
-            <div class="note">
-              이 명령은 macOS가 다운로드 파일에 붙이는 "격리" 표시만 지웁니다. 앱을 수정하지 않으며,
-              정식 공증 빌드를 받으면 필요 없는 단계입니다.
-            </div>
-
-            <h3 style="margin-top: 32px">윈도우에서 받아서 바로 쓰기</h3>
-            <ol>
-              <li><b>설치 파일 다운로드</b> — 위에서 <code>meno-0.5.0-setup.exe</code>를 받습니다.</li>
-              <li>
-                <b>SmartScreen 한 번 넘기기</b> — 코드 서명이 없는 빌드라 "Windows의 PC 보호"
-                창이 뜹니다. <b>추가 정보</b> → <b>실행</b>을 누르면 됩니다.
-              </li>
-              <li><b>설치</b> — 안내를 따라가면 시작 메뉴와 바탕화면에 바로가기가 생깁니다.</li>
-              <li><b>마이크 권한</b> — 첫 녹음 시 접근을 허용합니다.</li>
-              <li><b>모델 다운로드</b> — 맥과 동일하게 온보딩이 자동으로 받습니다.</li>
-            </ol>
-            <div class="note">
-              맥과 같은 앱이 그대로 돌아갑니다. 녹음·전사·요약 전부 이 PC 안에서 처리되고,
-              바깥으로 나가는 건 사용자가 직접 누르는 Notion·Jira 전송뿐입니다.
-            </div>
-          </div>
-          <div class="reveal" style="--d: 0.1s">
-            <h3>소스에서 빌드 <span class="scribble" style="font-size:17px;transform:rotate(-4deg)">개발자용 ✎</span></h3>
-            <div class="stack">
-              <div class="code">
-                <span class="prompt">$</span>
-                <code id="cmd-clone">git clone https://github.com/stronghuni/MENO.git &amp;&amp; cd MENO</code>
-                <button class="copy" data-copy="#cmd-clone">복사</button>
-              </div>
-              <div class="code">
-                <span class="prompt">$</span>
-                <code id="cmd-install">npm install</code>
-                <button class="copy" data-copy="#cmd-install">복사</button>
-              </div>
-              <div class="code">
-                <span class="prompt">$</span>
-                <code id="cmd-dev">npm run dev</code>
-                <button class="copy" data-copy="#cmd-dev">복사</button>
-              </div>
-            </div>
-            <p class="dl-hint" style="text-align: left; margin: 14px 0 22px">
-              Node 20.x / 22.x LTS 권장 · Xcode CLT 필요(<code>xcode-select --install</code>). DMG 빌드는
-              <code>npm run build:mac</code>.
-            </p>
-            <h3>데이터 위치 — 전부 로컬</h3>
-            <table class="dtable">
-              <tr><td>회의 DB</td><td><code>~/Library/Application Support/meno/meno.db</code></td></tr>
-              <tr><td>원본 오디오</td><td><code>…/meno/recordings/&lt;id&gt;.wav</code></td></tr>
-              <tr><td>모델</td><td><code>…/meno/models/</code></td></tr>
-              <tr><td>Notion 토큰</td><td>macOS Keychain</td></tr>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA band -->
-    <section>
-      <div class="wrap">
-        <div class="cta-band reveal">
-          <img src="/icon.png" alt="MENO 마스코트" />
-          <h2>느긋하게. 기록은 제가 챙길게요.</h2>
-          <p>지금 받아서 다음 회의부터 회의록 걱정 없이.</p>
-          <a class="btn" href="#download">MENO 다운로드</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="wrap footer-inner">
-        <a class="brand" href="/">
-          <img src="/icon.png" alt="MENO" />
-          <span class="brand-name">MENO</span>
-        </a>
-        <div class="footer-links">
-          <a href="#features">기능</a>
-          <a href="#download">다운로드</a>
-          <a href="https://github.com/stronghuni/MENO" target="_blank" rel="noopener">GitHub</a>
-        </div>
-        <p class="copy-note">
-          로컬에서 동작하는 macOS 회의록 앱. STT: openai/whisper (MIT) · 회의록: Qwen2.5-7B (Apache 2.0).
-        </p>
-      </div>
+    <footer class="site-footer">
+      <span class="wordmark" aria-label="MENO">MENO</span>
+      <nav class="footer-nav" aria-label="MENO 안내">
+        <a href="https://github.com/stronghuni/MENO" target="_blank" rel="noopener">GitHub</a>
+      </nav>
     </footer>
 
-    <script>
-      // Theme: respect saved choice, else OS preference.
-      (function () {
-        const root = document.documentElement;
-        const saved = localStorage.getItem("meno-theme");
-        const initial =
-          saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        root.setAttribute("data-theme", initial);
-        const btn = document.getElementById("themeToggle");
-        const sync = () => (btn.textContent = root.getAttribute("data-theme") === "dark" ? "☾" : "☀︎");
-        sync();
-        btn.addEventListener("click", () => {
-          const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-          root.setAttribute("data-theme", next);
-          localStorage.setItem("meno-theme", next);
-          sync();
-        });
-      })();
+    <dialog class="info-panel info-panel--compact" id="privacy" aria-labelledby="privacy-title">
+      <div class="panel-shell">
+        <header class="panel-header">
+          <div>
+            <span class="panel-kicker">LOCAL FIRST</span>
+            <h2 id="privacy-title" data-pretext>회의는 당신의 컴퓨터 안에서 끝납니다.</h2>
+          </div>
+          <button class="panel-close" type="button" data-close aria-label="창 닫기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="panel-body privacy-body">
+          <p class="panel-lede" data-pretext>
+            Whisper 전사와 Qwen 회의록 작성은 모두 로컬에서 실행됩니다. API 키나 계정이 필요 없고,
+            데이터는 사용자가 직접 누른 Notion·Jira 전송을 제외하면 외부로 나가지 않습니다.
+          </p>
+          <dl class="fact-list">
+            <div>
+              <dt>처리</dt>
+              <dd>음성 · 전사 · 요약 전 과정 로컬</dd>
+            </div>
+            <div>
+              <dt>비용</dt>
+              <dd>무료 · 오픈소스 · API 키 불필요</dd>
+            </div>
+            <div>
+              <dt>보관</dt>
+              <dd>회의 DB, 원본 오디오, 모델 모두 내 컴퓨터</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </dialog>
 
-      // Orchestrated load: trigger hero reveals + underline draw.
-      requestAnimationFrame(() => document.body.classList.add("loaded"));
+    <dialog class="info-panel" id="features" aria-labelledby="features-title">
+      <div class="panel-shell">
+        <header class="panel-header">
+          <div>
+            <span class="panel-kicker">WHAT MENO DOES</span>
+            <h2 id="features-title" data-pretext>회의 하나에 필요한 전부.</h2>
+          </div>
+          <button class="panel-close" type="button" data-close aria-label="창 닫기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="panel-body feature-list">
+          <article class="feature-row">
+            <span class="feature-index">01</span>
+            <div>
+              <h3>마이크 녹음 · 기존 파일 업로드</h3>
+              <p>
+                회의를 바로 녹음하거나 mp3·wav·m4a·flac·mp4·mov·avi·mkv 파일을 놓으세요. 자동으로
+                16kHz 음성으로 바꿔 처리합니다.
+              </p>
+            </div>
+          </article>
+          <article class="feature-row">
+            <span class="feature-index">02</span>
+            <div>
+              <h3>로컬 한국어 STT</h3>
+              <p>
+                Whisper Large-v3 Turbo와 Metal GPU 가속으로 받아 적습니다. 긴 회의는 자동으로
+                나누고, 각 구간의 결과를 바로 보관합니다.
+              </p>
+            </div>
+          </article>
+          <article class="feature-row">
+            <span class="feature-index">03</span>
+            <div>
+              <h3>실시간으로 채워지는 회의록</h3>
+              <p>
+                Qwen 2.5-7B가 TL;DR, 안건, 논의, 결정, 액션 아이템을 표준 형식으로 씁니다. 무음이나
+                반복 음성에서 생기는 환각도 걸러냅니다.
+              </p>
+            </div>
+          </article>
+          <article class="feature-row">
+            <span class="feature-index">04</span>
+            <div>
+              <h3>회의 관계 그래프 · 캘린더</h3>
+              <p>
+                참석자와 주제가 겹치는 회의를 연결하고, 회의록에서 다음 일정을 찾아 캘린더와 시작 전
+                알림으로 이어줍니다.
+              </p>
+            </div>
+          </article>
+          <article class="feature-row">
+            <span class="feature-index">05</span>
+            <div>
+              <h3>Notion · Jira 연동</h3>
+              <p>
+                완성된 회의록을 Notion에 올리고 액션 아이템을 Jira 이슈로 내보냅니다. 연동 토큰은
+                운영체제의 안전한 저장소에 보관합니다.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </dialog>
 
-      // Scroll reveal for sections below the fold.
-      const io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              e.target.classList.add("in");
-              io.unobserve(e.target);
-            }
-          }
-        },
-        { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
-      );
-      document.querySelectorAll("section .reveal").forEach((el) => io.observe(el));
+    <dialog class="info-panel" id="how" aria-labelledby="how-title">
+      <div class="panel-shell">
+        <header class="panel-header">
+          <div>
+            <span class="panel-kicker">THREE QUIET STEPS</span>
+            <h2 id="how-title" data-pretext>받고, 모델 한 번 내려받고, 녹음.</h2>
+          </div>
+          <button class="panel-close" type="button" data-close aria-label="창 닫기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="panel-body">
+          <ol class="step-list">
+            <li>
+              <span>01</span>
+              <div>
+                <h3>다운로드 &amp; 설치</h3>
+                <p>내 컴퓨터에 맞는 설치 파일을 받고 MENO를 설치합니다.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <h3>모델 자동 다운로드</h3>
+                <p>
+                  첫 실행 온보딩에서 Whisper와 Qwen 모델 약 6.3GB를 내려받습니다. 끊겨도
+                  이어받습니다.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <h3>녹음 또는 파일 놓기</h3>
+                <p>
+                  녹음을 끝내면 전사와 회의록 작성이 시작됩니다. 원하면 Notion 업로드까지 자동으로
+                  이어집니다.
+                </p>
+              </div>
+            </li>
+          </ol>
+          <div class="command-block">
+            <span aria-hidden="true">$</span>
+            <code id="cmd-quick">xattr -dr com.apple.quarantine /Applications/MENO.app</code>
+            <button class="copy-button" type="button" data-copy="#cmd-quick">복사</button>
+          </div>
+          <p class="command-note">
+            macOS 미공증 빌드는 처음 한 번만 위 명령으로 격리 속성을 풀어주세요.
+          </p>
+        </div>
+      </div>
+    </dialog>
 
-      // Copy-to-clipboard for code blocks.
-      document.querySelectorAll(".copy").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const el = document.querySelector(btn.dataset.copy);
-          if (!el) return;
+    <dialog class="info-panel" id="download" aria-labelledby="download-title">
+      <div class="panel-shell">
+        <header class="panel-header">
+          <div>
+            <span class="panel-kicker">MENO 0.5.0</span>
+            <h2 id="download-title" data-pretext>내 컴퓨터에 맞는 버전을 받으세요.</h2>
+          </div>
+          <button class="panel-close" type="button" data-close aria-label="창 닫기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="panel-body download-list">
+          <a
+            class="download-row download-row--primary"
+            href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-arm64.dmg"
+          >
+            <span class="download-platform">Apple Silicon</span>
+            <strong>M1 · M2 · M3 · M4</strong>
+            <small>meno-0.5.0-arm64.dmg · 168 MB</small>
+            <span class="download-action">arm64 DMG 받기 <span aria-hidden="true">↘</span></span>
+          </a>
+          <a
+            class="download-row"
+            href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-x64.dmg"
+          >
+            <span class="download-platform">Intel Mac</span>
+            <strong>인텔 프로세서</strong>
+            <small>meno-0.5.0-x64.dmg · 174 MB</small>
+            <span class="download-action">x64 DMG 받기 <span aria-hidden="true">↘</span></span>
+          </a>
+          <a
+            class="download-row"
+            href="https://github.com/stronghuni/MENO/releases/download/v0.5.0/meno-0.5.0-setup.exe"
+          >
+            <span class="download-platform">Windows</span>
+            <strong>10 · 11 · 64비트</strong>
+            <small>meno-0.5.0-setup.exe · 387 MB</small>
+            <span class="download-action">설치 파일 받기 <span aria-hidden="true">↘</span></span>
+          </a>
+          <div class="download-footnote">
+            <span>macOS 12 이상 또는 Windows 10/11 64비트</span>
+            <span>모델용 여유 공간 약 8GB</span>
+            <a
+              href="https://github.com/stronghuni/MENO/releases/latest"
+              target="_blank"
+              rel="noopener"
+              >모든 릴리스 보기</a
+            >
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="info-panel info-panel--wide" id="docs" aria-labelledby="docs-title">
+      <div class="panel-shell">
+        <header class="panel-header">
+          <div>
+            <span class="panel-kicker">FIRST RUN GUIDE</span>
+            <h2 id="docs-title" data-pretext>처음 한 번만, 차근차근.</h2>
+          </div>
+          <button class="panel-close" type="button" data-close aria-label="창 닫기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="panel-body docs-grid">
+          <section>
+            <span class="docs-label">macOS</span>
+            <h3>받아서 바로 쓰기</h3>
+            <ol>
+              <li>맥 종류에 맞는 DMG를 받고 MENO를 Applications 폴더로 옮깁니다.</li>
+              <li>미공증 빌드라 처음 실행할 때 막히면 아래 명령을 한 번 실행합니다.</li>
+            </ol>
+            <div class="command-block">
+              <span aria-hidden="true">$</span>
+              <code id="cmd-mac">xattr -dr com.apple.quarantine /Applications/MENO.app</code>
+              <button class="copy-button" type="button" data-copy="#cmd-mac">복사</button>
+            </div>
+            <ol start="3">
+              <li>첫 녹음에서 마이크 접근을 허용합니다.</li>
+              <li>온보딩이 Whisper 1.6GB와 Qwen 4.7GB를 내려받으면 준비가 끝납니다.</li>
+            </ol>
+            <p class="info-note">
+              이 명령은 다운로드 파일의 격리 표시만 지우며 앱 자체를 수정하지 않습니다.
+            </p>
+
+            <span class="docs-label docs-label--spaced">Windows</span>
+            <h3>설치 파일로 시작하기</h3>
+            <ol>
+              <li>설치 파일을 실행합니다.</li>
+              <li>SmartScreen이 열리면 <b>추가 정보</b> → <b>실행</b>을 선택합니다.</li>
+              <li>마이크 권한과 모델 다운로드를 마치면 바로 사용할 수 있습니다.</li>
+            </ol>
+          </section>
+
+          <section>
+            <span class="docs-label">DEVELOPER</span>
+            <h3>소스에서 빌드</h3>
+            <div class="command-stack">
+              <div class="command-block">
+                <span aria-hidden="true">$</span>
+                <code id="cmd-clone"
+                  >git clone https://github.com/stronghuni/MENO.git &amp;&amp; cd MENO</code
+                >
+                <button class="copy-button" type="button" data-copy="#cmd-clone">복사</button>
+              </div>
+              <div class="command-block">
+                <span aria-hidden="true">$</span>
+                <code id="cmd-install">npm install</code>
+                <button class="copy-button" type="button" data-copy="#cmd-install">복사</button>
+              </div>
+              <div class="command-block">
+                <span aria-hidden="true">$</span>
+                <code id="cmd-dev">npm run dev</code>
+                <button class="copy-button" type="button" data-copy="#cmd-dev">복사</button>
+              </div>
+            </div>
+            <p class="command-note">
+              Node 20.x / 22.x LTS와 Xcode Command Line Tools를 권장합니다.
+            </p>
+
+            <span class="docs-label docs-label--spaced">LOCAL DATA</span>
+            <h3>데이터 위치</h3>
+            <table class="data-table">
+              <caption class="sr-only">
+                MENO가 로컬에 저장하는 데이터의 위치
+              </caption>
+              <tbody>
+                <tr>
+                  <th scope="row">회의 DB</th>
+                  <td><code>~/Library/Application Support/meno/meno.db</code></td>
+                </tr>
+                <tr>
+                  <th scope="row">원본 오디오</th>
+                  <td><code>…/meno/recordings/&lt;id&gt;.wav</code></td>
+                </tr>
+                <tr>
+                  <th scope="row">모델</th>
+                  <td><code>…/meno/models/</code></td>
+                </tr>
+                <tr>
+                  <th scope="row">Notion 토큰</th>
+                  <td>macOS Keychain</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="sr-only" id="copyStatus" role="status" aria-live="polite"></div>
+
+    <script type="module">
+      import { layout, prepare, setLocale } from '/pretext.js'
+
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+      const dialogs = new Map(
+        [...document.querySelectorAll('dialog')].map((dialog) => [dialog.id, dialog])
+      )
+      const stageKicker = document.getElementById('stageKicker')
+      const stageTitle = document.getElementById('stageTitle')
+      const stageDescription = document.getElementById('stageDescription')
+      const stageWrap = document.querySelector('.stage-wrap')
+      const stageObjects = [...document.querySelectorAll('.stage-object')]
+      const defaultCaption = {
+        kicker: stageKicker.textContent,
+        title: stageTitle.textContent,
+        description: stageDescription.textContent
+      }
+      let lastTrigger = null
+
+      function setCaption(source) {
+        stageKicker.textContent = source?.dataset.kicker || defaultCaption.kicker
+        stageTitle.textContent = source?.dataset.title || defaultCaption.title
+        stageDescription.textContent = source?.dataset.description || defaultCaption.description
+        prepareText(stageTitle)
+        prepareText(stageDescription)
+        relayoutText()
+      }
+
+      stageObjects.forEach((object) => {
+        object.addEventListener('mouseenter', () => setCaption(object))
+        object.addEventListener('focus', () => setCaption(object))
+      })
+      document.querySelector('.object-row').addEventListener('mouseleave', () => setCaption())
+
+      function setActiveStageObject(activeObject) {
+        stageObjects.forEach((object) => {
+          const isActive = object === activeObject
+          object.classList.toggle('is-active', isActive)
+          if (isActive) object.setAttribute('aria-current', 'true')
+          else object.removeAttribute('aria-current')
+        })
+        if (activeObject) setCaption(activeObject)
+      }
+
+      function alignActiveObject(activeObject, panel) {
+        if (!activeObject) {
+          stageWrap.style.removeProperty('--panel-stage-shift')
+          return
+        }
+
+        const objectRect = activeObject.getBoundingClientRect()
+        const appliedShift = document.body.classList.contains('panel-open')
+          ? Number.parseFloat(
+              getComputedStyle(stageWrap).getPropertyValue('--panel-stage-shift')
+            ) || 0
+          : 0
+        const objectCenter = objectRect.left + objectRect.width / 2 + appliedShift
+        const panelLeft = innerWidth - panel.offsetWidth - 8
+        const targetCenter = panelLeft / 2
+        stageWrap.style.setProperty(
+          '--panel-stage-shift',
+          `${(objectCenter - targetCenter).toFixed(1)}px`
+        )
+      }
+
+      function openPanel(id, trigger) {
+        const panel = dialogs.get(id)
+        if (!panel) return
+        const current = document.querySelector('dialog[open]')
+        if (current && current !== panel) current.close()
+        lastTrigger = trigger || lastTrigger
+
+        const activeObject = trigger?.matches?.('.stage-object') ? trigger : null
+        setActiveStageObject(activeObject)
+
+        if (!panel.open) panel.showModal()
+        alignActiveObject(activeObject, panel)
+        document.body.classList.add('panel-open')
+        history.replaceState(null, '', `#${id}`)
+        requestAnimationFrame(() => {
+          relayoutText()
+          panel.querySelector('.panel-close')?.focus()
+        })
+      }
+
+      function closePanel(panel, restoreFocus = true) {
+        if (!panel?.open) return
+        panel.close()
+        document.body.classList.remove('panel-open')
+        setActiveStageObject(null)
+        stageWrap.style.removeProperty('--panel-stage-shift')
+        setCaption()
+        history.replaceState(null, '', `${location.pathname}${location.search}`)
+        if (restoreFocus) lastTrigger?.focus()
+      }
+
+      document.querySelectorAll('[data-panel]').forEach((trigger) => {
+        trigger.addEventListener('click', () => openPanel(trigger.dataset.panel, trigger))
+      })
+
+      document.querySelectorAll('a[href^="#"]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const id = link.getAttribute('href').slice(1)
+          if (!dialogs.has(id)) return
+          event.preventDefault()
+          openPanel(id, link)
+        })
+      })
+
+      dialogs.forEach((panel) => {
+        panel.querySelectorAll('[data-close]').forEach((button) => {
+          button.addEventListener('click', () => closePanel(panel))
+        })
+        panel.addEventListener('click', (event) => {
+          if (event.target === panel) closePanel(panel)
+        })
+        panel.addEventListener('cancel', (event) => {
+          event.preventDefault()
+          closePanel(panel)
+        })
+      })
+
+      window.addEventListener('resize', () => {
+        const panel = document.querySelector('dialog[open]')
+        const activeObject = document.querySelector('.stage-object.is-active')
+        if (panel && activeObject) alignActiveObject(activeObject, panel)
+      })
+
+      document.querySelectorAll('[data-copy]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const target = document.querySelector(button.dataset.copy)
+          const status = document.getElementById('copyStatus')
+          if (!target) return
           try {
-            await navigator.clipboard.writeText(el.textContent.trim());
-            const old = btn.textContent;
-            btn.textContent = "복사됨";
-            btn.classList.add("done");
+            await navigator.clipboard.writeText(target.textContent.trim())
+            const original = button.textContent
+            button.textContent = '복사됨'
+            button.classList.add('is-copied')
+            status.textContent = '명령을 클립보드에 복사했습니다.'
             setTimeout(() => {
-              btn.textContent = old;
-              btn.classList.remove("done");
-            }, 1400);
-          } catch (e) {
-            /* clipboard blocked — no-op */
+              button.textContent = original
+              button.classList.remove('is-copied')
+            }, 1600)
+          } catch {
+            status.textContent = '명령을 복사하지 못했습니다. 텍스트를 직접 선택해 주세요.'
+            target.focus?.()
           }
-        });
-      });
+        })
+      })
 
-      // Smooth in-page scrolling.
-      document.querySelectorAll('a[href^="#"]').forEach((a) => {
-        a.addEventListener("click", (e) => {
-          const id = a.getAttribute("href");
-          if (id.length < 2) return;
-          const target = document.querySelector(id);
-          if (!target) return;
-          e.preventDefault();
-          target.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      });
+      if (!reduceMotion) {
+        stageObjects.forEach((object) => {
+          let pointerId = null
+          let startX = 0
+          let startY = 0
+          let moved = false
+          let suppressClick = false
+          let snapTimer = null
+
+          const finishDrag = (event) => {
+            if (
+              pointerId === null ||
+              (event.pointerId !== undefined && event.pointerId !== pointerId)
+            ) {
+              return
+            }
+
+            if (object.hasPointerCapture(pointerId)) object.releasePointerCapture(pointerId)
+            pointerId = null
+            object.classList.remove('is-dragging')
+            object.classList.add('is-snapping')
+            object.style.setProperty('--drag-x', '0px')
+            object.style.setProperty('--drag-y', '0px')
+            object.style.setProperty('--drag-rotate', '0deg')
+            suppressClick = moved
+            clearTimeout(snapTimer)
+            snapTimer = setTimeout(() => object.classList.remove('is-snapping'), 700)
+          }
+
+          object.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0 || document.body.classList.contains('panel-open')) return
+            event.preventDefault()
+            clearTimeout(snapTimer)
+            object.classList.remove('is-snapping')
+            object.classList.add('is-dragging')
+            pointerId = event.pointerId
+            startX = event.clientX
+            startY = event.clientY
+            moved = false
+            object.setPointerCapture(pointerId)
+          })
+
+          object.addEventListener('pointermove', (event) => {
+            if (event.pointerId !== pointerId) return
+            const limitX = innerWidth * 0.15
+            const limitY = innerHeight * 0.14
+            const dragX = Math.max(-limitX, Math.min(limitX, event.clientX - startX))
+            const dragY = Math.max(-limitY, Math.min(limitY, event.clientY - startY))
+            moved ||= Math.hypot(dragX, dragY) > 6
+            object.style.setProperty('--drag-x', `${dragX.toFixed(1)}px`)
+            object.style.setProperty('--drag-y', `${dragY.toFixed(1)}px`)
+            object.style.setProperty(
+              '--drag-rotate',
+              `${Math.max(-10, Math.min(10, dragX * 0.055 - dragY * 0.018)).toFixed(2)}deg`
+            )
+          })
+
+          object.addEventListener('pointerup', finishDrag)
+          object.addEventListener('pointercancel', finishDrag)
+          object.addEventListener(
+            'click',
+            (event) => {
+              if (!suppressClick) return
+              event.preventDefault()
+              event.stopImmediatePropagation()
+              suppressClick = false
+            },
+            true
+          )
+        })
+
+        window.addEventListener(
+          'pointermove',
+          (event) => {
+            const x = (event.clientX / innerWidth - 0.5) * 2
+            const y = (event.clientY / innerHeight - 0.5) * 2
+            stageWrap.style.setProperty('--pointer-x', x.toFixed(3))
+            stageWrap.style.setProperty('--pointer-y', y.toFixed(3))
+          },
+          { passive: true }
+        )
+      }
+
+      setLocale('ko')
+      const preparedText = new Map()
+
+      function prepareText(element) {
+        if (!element) return
+        const style = getComputedStyle(element)
+        preparedText.set(element, prepare(element.textContent.trim(), style.font))
+      }
+
+      function relayoutText() {
+        preparedText.forEach((handle, element) => {
+          if (element.clientWidth === 0) return
+          const style = getComputedStyle(element)
+          const lineHeight = Number.parseFloat(style.lineHeight)
+          const result = layout(handle, element.clientWidth, lineHeight)
+          element.style.minHeight = `${Math.ceil(result.height)}px`
+        })
+      }
+
+      await document.fonts.ready
+      document.querySelectorAll('[data-pretext]').forEach(prepareText)
+      relayoutText()
+      new ResizeObserver(relayoutText).observe(document.documentElement)
+
+      const initialPanel = location.hash.slice(1)
+      if (dialogs.has(initialPanel)) openPanel(initialPanel, null)
+      requestAnimationFrame(() => document.body.classList.add('is-ready'))
+      setTimeout(() => document.body.classList.add('entrance-complete'), reduceMotion ? 0 : 1300)
     </script>
   </body>
 </html>
