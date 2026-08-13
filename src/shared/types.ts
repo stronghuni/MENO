@@ -88,7 +88,7 @@ export interface RecordingStartParams {
   sampleRate: number
 }
 
-export type SecretKey = 'notion.token' | 'huggingface.token' | 'jira.token'
+export type SecretKey = 'notion.token' | 'jira.token'
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -158,15 +158,6 @@ export interface RelatedMeeting {
   startedAt: number
   shared: GraphEntity[]
   score: number
-}
-
-/** One row in the connections page: a meeting + its top related meetings. */
-export interface MeetingConnections {
-  id: string
-  title: string
-  startedAt: number
-  entities: GraphEntity[]
-  related: RelatedMeeting[]
 }
 
 /** An entity (topic/person) with the meetings it appears in. */

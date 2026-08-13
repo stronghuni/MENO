@@ -117,12 +117,11 @@ function pushEvent(channel: string, payload: unknown): void {
 }
 
 let started = false
-let cleanup: (() => void) | null = null
 
 export function startDevBridge(): void {
   if (started) return
   started = true
-  cleanup = addExternalListener(pushEvent)
+  addExternalListener(pushEvent)
 
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
@@ -166,10 +165,4 @@ export function startDevBridge(): void {
       console.error('[devBridge] server error:', e)
     }
   })
-}
-
-export function stopDevBridge(): void {
-  if (cleanup) cleanup()
-  cleanup = null
-  started = false
 }

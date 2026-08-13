@@ -16,11 +16,3 @@ export function applyTheme(mode: ThemeMode): void {
   else if (mode === 'dark') html.classList.add('theme-dark')
   // 'auto' leaves both classes off so prefers-color-scheme drives it.
 }
-
-export function resolveEffective(mode: ThemeMode): 'light' | 'dark' {
-  if (mode === 'light' || mode === 'dark') return mode
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  return 'light'
-}

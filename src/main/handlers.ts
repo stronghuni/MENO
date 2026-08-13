@@ -43,10 +43,9 @@ import { clearChatHistory, getChatHistory, sendMessage } from './services/chat'
 import { markdownToDocxBuffer } from './services/docxExport'
 import { deleteSecret, getSecret, hasSecret, setSecret, SecretKey } from './services/keychain'
 import { loadSettings, saveSettings, Settings } from './services/settings'
-import { searchDatabases, uploadMeeting } from './services/notion'
+import { searchTargets, uploadMeeting } from './services/notion'
 import { testJira, listProjects, listIssueTypes, exportActionItems } from './services/jira'
 import {
-  getConnections,
   getRelatedMeetings,
   getMeetingEntities,
   getEntityIndex,
@@ -199,7 +198,7 @@ export const handlers: Record<string, Handler> = {
   },
 
   // ── notion ────────────────────────────────────────────────────────────
-  'notion:databases': () => searchDatabases(),
+  'notion:databases': () => searchTargets(),
   'notion:upload': (meetingId) => uploadMeeting(meetingId as string),
 
   // ── jira (action items → issues) ───────────────────────────────────────
@@ -209,7 +208,6 @@ export const handlers: Record<string, Handler> = {
   'jira:export': (meetingId) => exportActionItems(meetingId as string),
 
   // ── relationship graph (related meetings) ───────────────────────────────
-  'graph:connections': () => getConnections(),
   'graph:related': (meetingId) => getRelatedMeetings(meetingId as string),
   'graph:entities': (meetingId) => getMeetingEntities(meetingId as string),
   'graph:entityIndex': () => getEntityIndex(),

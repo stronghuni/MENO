@@ -12,7 +12,6 @@ import type {
   JiraProject,
   CreateEventInput,
   Meeting,
-  MeetingConnections,
   Project,
   RelatedMeeting,
   ScheduledEvent,
@@ -130,7 +129,6 @@ const api = {
       ipcRenderer.invoke('jira:export', meetingId)
   },
   graph: {
-    connections: (): Promise<MeetingConnections[]> => ipcRenderer.invoke('graph:connections'),
     related: (meetingId: string): Promise<RelatedMeeting[]> =>
       ipcRenderer.invoke('graph:related', meetingId),
     entities: (meetingId: string): Promise<GraphEntity[]> =>

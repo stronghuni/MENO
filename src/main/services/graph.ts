@@ -5,7 +5,6 @@ import type {
   GraphEntity,
   GraphEntityType,
   RelatedMeeting,
-  MeetingConnections,
   EntityIndexItem
 } from '../../shared/types'
 
@@ -257,15 +256,4 @@ export function getEntityIndex(): EntityIndexItem[] {
   return Array.from(byNode.values()).sort(
     (a, b) => b.meetings.length - a.meetings.length || a.name.localeCompare(b.name)
   )
-}
-
-/** Connections overview: every indexed meeting with its top related set. */
-export function getConnections(): MeetingConnections[] {
-  return listMeetings().map((m) => ({
-    id: m.id,
-    title: m.title,
-    startedAt: m.startedAt,
-    entities: getMeetingEntities(m.id),
-    related: getRelatedMeetings(m.id, 5)
-  }))
 }

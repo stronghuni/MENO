@@ -37,10 +37,3 @@ export function startScheduler(): void {
   check()
   timer = setInterval(check, 60_000)
 }
-
-export function stopScheduler(): void {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-}

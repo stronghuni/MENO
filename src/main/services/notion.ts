@@ -70,11 +70,6 @@ export async function searchTargets(): Promise<NotionTarget[]> {
     }))
 }
 
-/**
- * Backwards-compatible alias. Existing renderer imports call this name.
- */
-export const searchDatabases = searchTargets
-
 export async function uploadMeeting(meetingId: string): Promise<{ url: string }> {
   const meeting = getMeeting(meetingId)
   if (!meeting) throw new Error(`회의 ${meetingId}를 찾을 수 없습니다.`)

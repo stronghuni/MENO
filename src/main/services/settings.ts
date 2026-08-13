@@ -1,8 +1,9 @@
 import { app } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import type { ThemeMode } from '../../shared/types'
 
-export type ThemeMode = 'auto' | 'light' | 'dark'
+export type { ThemeMode }
 
 export interface Settings {
   /**

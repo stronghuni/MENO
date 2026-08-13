@@ -1,9 +1,10 @@
 import keytar from 'keytar'
+import type { SecretKey } from '../../shared/types'
 
 const SERVICE = 'io.namuneulbo.meno'
 const LEGACY_SERVICE = 'io.namuneulbo.meetingnotes'
 
-export type SecretKey = 'notion.token' | 'huggingface.token' | 'jira.token'
+export type { SecretKey }
 
 /**
  * If the user previously stored this key under the old service name

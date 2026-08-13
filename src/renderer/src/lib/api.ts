@@ -146,7 +146,6 @@ function buildHttpApi(): WindowApi {
       export: (id: string) => invoke('jira:export', id)
     },
     graph: {
-      connections: () => invoke('graph:connections'),
       related: (id: string) => invoke('graph:related', id),
       entities: (id: string) => invoke('graph:entities', id),
       entityIndex: () => invoke('graph:entityIndex'),
@@ -190,9 +189,4 @@ export function getApi(): WindowApi | null {
     return cachedHttp
   }
   return null
-}
-
-export function isElectron(): boolean {
-  if (typeof window === 'undefined') return false
-  return Boolean((window as Window).api)
 }

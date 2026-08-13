@@ -37,15 +37,10 @@ function getWhisper(): Whisper {
   // "aheads_masks_init failed for alignment heads masks". We patched
   // the binding to use defaults (see node_modules/.../model.cc), and we
   // additionally keep the model loaded for the entire session by using
-  // a large offload window. `unloadModel()` is called explicitly on
-  // app quit.
+  // a large offload window. Nothing frees it explicitly — process exit
+  // reclaims it, which is the only teardown this app ever needs.
   cached = new Whisper(getModelPath(), { gpu: true, offload: 24 * 60 * 60 })
   return cached
-}
-
-export interface TranscribeProgress {
-  segment: TranscriptSegment
-  count: number
 }
 
 // Whisper Large-v3's training data is full of Korean broadcast & YouTube
@@ -100,96 +95,6 @@ function isOverSilence(
   return overlapVoicedSec(startSec, endSec, voiced) / dur < VOICED_MIN_OVERLAP_RATIO
 }
 
-export async function transcribeWav(
-  wavPath: string,
-  onProgress?: (p: TranscribeProgress) => void
-): Promise<TranscriptSegment[]> {
-  const { pcm, sampleRate } = await readWav(wavPath)
-  if (sampleRate !== 16000) {
-    throw new Error(`Expected 16kHz WAV, got ${sampleRate}Hz`)
-  }
-  // Pre-compute voiced timeline so the segment filter can run inline as
-  // Whisper streams results — see VOICED_MIN_OVERLAP_RATIO.
-  const voiced = computeVoicedRegions(pcm, { sampleRate })
-  const whisper = getWhisper()
-  // Streaming segments delivered via `task.on('transcribed', ...)`. Listener
-  // is attached as early as possible so we don't miss segments emitted by
-  // smart-whisper's C++ scheduler. We also re-collect from `task.result`
-  // which holds the final ordered list (when the binding doesn't error).
-  const segments: TranscriptSegment[] = []
-  const seen = new Set<string>()
-  const taskPromise = whisper.transcribe(pcm, {
-    language: 'ko',
-    format: 'simple',
-    // Match the standalone E2E test (which works reliably). On a 12-core
-    // M-series 6 threads is the sweet spot — pushing to 8 occasionally
-    // overlaps Metal/CPU contention and we've seen whisper_full bail.
-    n_threads: 6,
-    print_progress: false,
-    print_realtime: false,
-    // Anti-hallucination knobs (whisper.cpp → smart-whisper pass-through):
-    //   - no_speech_threshold: stricter "is this silence?" cutoff.
-    //     Default 0.6; bumping to 0.8 drops more borderline-quiet chunks
-    //     so the model doesn't fall back to memorized subtitle credits.
-    //   - logprob_threshold: drop segments where the model is unsure.
-    //   - entropy_thold: drop segments whose token entropy looks like a
-    //     stuck-loop hallucination (default 2.4 → 2.2 is a small tightening).
-    //   - condition_on_previous_text: false stops the repetition cascade
-    //     where one hallucination primes the next.
-    no_speech_threshold: 0.8,
-    logprob_threshold: -0.8,
-    entropy_thold: 2.2,
-    condition_on_previous_text: false
-  } as Parameters<typeof whisper.transcribe>[1])
-  const task = await taskPromise
-  const pushSegment = (r: { from: number; to: number; text: string }): void => {
-    const text = r.text.trim()
-    if (isHallucination(text)) return
-    const startSec = r.from / 1000
-    const endSec = r.to / 1000
-    if (isOverSilence(startSec, endSec, voiced)) return
-    const seg: TranscriptSegment = {
-      start: startSec,
-      end: endSec,
-      speaker: null,
-      text
-    }
-    // Dedupe in case both the event and the fallback hand us the same row.
-    const key = `${seg.start}|${seg.end}|${seg.text}`
-    if (seen.has(key)) return
-    seen.add(key)
-    segments.push(seg)
-    onProgress?.({ segment: seg, count: segments.length })
-  }
-  task.on('transcribed', pushSegment)
-  const finalResults = await task.result
-  // The C++ binding's resolve value isn't strictly typed in smart-whisper —
-  // observed it returning undefined under some startup orderings. Guard
-  // before iterating; the event listener has already captured what came
-  // through.
-  if (Array.isArray(finalResults)) {
-    for (const r of finalResults) pushSegment(r)
-  } else if (finalResults && typeof finalResults === 'object') {
-    // Some smart-whisper builds resolve to `{ result: [...] }` instead of
-    // a bare array. Handle the wrapped shape transparently.
-    const wrapped = finalResults as unknown as { result?: unknown[]; results?: unknown[] }
-    const arr = (wrapped.result ?? wrapped.results) as
-      | { from: number; to: number; text: string }[]
-      | undefined
-    if (Array.isArray(arr)) {
-      for (const r of arr) pushSegment(r)
-    } else {
-      console.warn(
-        '[transcriber] task.result shape unknown, keys=',
-        Object.keys(finalResults)
-      )
-    }
-  } else {
-    console.warn('[transcriber] task.result was', typeof finalResults, finalResults)
-  }
-  segments.sort((a, b) => a.start - b.start)
-  return collapseRepeatedSegments(segments)
-}
 
 // ─────────────────────────────────────────────────────────────────────
 //  Chunked transcription for long audio
@@ -285,9 +190,21 @@ export async function transcribeWavChunked(
     const taskPromise = whisper.transcribe(ch.pcm, {
       language: 'ko',
       format: 'simple',
+      // Match the standalone E2E test (which works reliably). On a 12-core
+      // M-series 6 threads is the sweet spot — pushing to 8 occasionally
+      // overlaps Metal/CPU contention and we've seen whisper_full bail.
       n_threads: 6,
       print_progress: false,
       print_realtime: false,
+      // Anti-hallucination knobs (whisper.cpp → smart-whisper pass-through):
+      //   - no_speech_threshold: stricter "is this silence?" cutoff.
+      //     Default 0.6; bumping to 0.8 drops more borderline-quiet chunks
+      //     so the model doesn't fall back to memorized subtitle credits.
+      //   - logprob_threshold: drop segments where the model is unsure.
+      //   - entropy_thold: drop segments whose token entropy looks like a
+      //     stuck-loop hallucination (default 2.4 → 2.2 is a small tightening).
+      //   - condition_on_previous_text: false stops the repetition cascade
+      //     where one hallucination primes the next.
       no_speech_threshold: 0.8,
       logprob_threshold: -0.8,
       entropy_thold: 2.2,
@@ -350,9 +267,3 @@ export async function transcribeWavChunked(
   return collapseRepeatedSegments(accumulated)
 }
 
-export async function unloadModel(): Promise<void> {
-  if (cached) {
-    await cached.free()
-    cached = null
-  }
-}
