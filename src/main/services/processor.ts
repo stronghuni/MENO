@@ -1,7 +1,7 @@
 import { getMeeting, updateMeeting } from './storage'
 import { transcribeWavChunked, isModelInstalled } from './transcriber'
 import { isLlmInstalled, summarize } from './summarizer'
-import { extractAttendees, extractTags } from '../domain/prompts'
+import { extractTags } from '../domain/prompts'
 import { broadcast as send } from './broadcaster'
 import { hasSecret } from './keychain'
 import { loadSettings } from './settings'
@@ -15,7 +15,14 @@ import type { ProcessingStatus, TranscriptSegment } from '../../shared/types'
 const active = new Map<string, ProcessingStatus>()
 
 function broadcast(status: ProcessingStatus): void {
-  active.set(status.meetingId, status)
+  // `active` is never pruned — a status has to stay queryable for
+  // `processing:status` after the run ends. Drop `partialSegments` on the
+  // terminal stages so what lingers is a few small fields instead of the
+  // meeting's whole transcript: MeetingDetail only reads partialSegments
+  // while stage === 'transcribing', and prefers the persisted transcript
+  // the moment one exists.
+  const terminal = status.stage === 'done' || status.stage === 'error'
+  active.set(status.meetingId, terminal ? { ...status, partialSegments: undefined } : status)
   send('processing:update', status)
 }
 
@@ -69,16 +76,14 @@ export async function processRecording(meetingId: string, audioPath: string): Pr
       }
     )
 
-    // Speaker diarization was removed — onnxruntime 1.24 KleidiAI crash.
-    // Attendee list comes from the user's new-meeting form; if they
-    // skipped the field we fall back to whatever speaker labels the
-    // segments carry (currently always null, since diarization is off).
+    // Speaker diarization was removed — onnxruntime 1.24 KleidiAI crash —
+    // so segments carry no speaker labels and the attendee list can only
+    // come from the user's new-meeting form. Blank when they skipped it;
+    // never guessed, or the summary prompt starts inventing participants.
     const existing = getMeeting(meetingId)
-    const userAttendees: string[] = existing?.attendeesJson
+    const finalAttendees: string[] = existing?.attendeesJson
       ? (JSON.parse(existing.attendeesJson) as string[])
       : []
-    const finalAttendees =
-      userAttendees.length > 0 ? userAttendees : extractAttendees(segments)
     updateMeeting(meetingId, {
       transcriptJson: JSON.stringify(segments),
       attendeesJson:

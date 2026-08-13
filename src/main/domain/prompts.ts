@@ -180,13 +180,6 @@ export interface ExtractedKeywords {
   attendees: string[]
 }
 
-/** Naive client-side fallback: extract unique speaker labels as attendees. */
-export function extractAttendees(segments: TranscriptSegment[]): string[] {
-  const set = new Set<string>()
-  for (const s of segments) if (s.speaker) set.add(s.speaker)
-  return Array.from(set)
-}
-
 /**
  * For long meetings we map-reduce: ask the LLM to extract structured
  * bullet points from each time window, then ask once more for a final

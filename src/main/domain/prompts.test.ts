@@ -3,7 +3,6 @@ import {
   buildMeetingNotesPrompt,
   chunkSegmentsByTime,
   enforceAttendeesLine,
-  extractAttendees,
   extractTags
 } from './prompts'
 
@@ -52,27 +51,6 @@ describe('buildMeetingNotesPrompt', () => {
     const prompt = buildMeetingNotesPrompt('제품', Date.now(), null, segments)
     expect(prompt).toContain('SPK1:')
     expect(prompt).toContain('SPK2:')
-  })
-})
-
-describe('extractAttendees', () => {
-  it('returns unique speakers preserving first-seen order', () => {
-    expect(
-      extractAttendees([
-        { start: 0, end: 1, speaker: 'SPK1', text: 'a' },
-        { start: 1, end: 2, speaker: 'SPK2', text: 'b' },
-        { start: 2, end: 3, speaker: 'SPK1', text: 'c' }
-      ])
-    ).toEqual(['SPK1', 'SPK2'])
-  })
-
-  it('skips null speakers', () => {
-    expect(
-      extractAttendees([
-        { start: 0, end: 1, speaker: null, text: 'a' },
-        { start: 1, end: 2, speaker: 'SPK1', text: 'b' }
-      ])
-    ).toEqual(['SPK1'])
   })
 })
 
