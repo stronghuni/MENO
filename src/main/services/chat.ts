@@ -4,7 +4,7 @@ import { join } from 'path'
 import { broadcast } from './broadcaster'
 import { getMeeting, listMeetings } from './storage'
 import { getModel, isLlmInstalled } from './summarizer'
-import type { ChatMessage, Meeting, TranscriptSegment } from '../../shared/types'
+import type { ChatMessage, Meeting } from '../../shared/types'
 
 /**
  * Single global chat thread. The user picks which meetings to scope each
@@ -12,9 +12,11 @@ import type { ChatMessage, Meeting, TranscriptSegment } from '../../shared/types
  * those explicit selections, or is empty / null to mean "all meetings".
  *
  * One LlamaChatSession is kept alive per process at a time. Its system
- * prompt embeds the selected meetings' notes (and, for a single-meeting
- * scope, the transcript too). Switching scope rebuilds the session so
- * the LLM doesn't try to talk about meetings it was never shown.
+ * prompt embeds the selected meetings' notes — never the raw transcript.
+ * A 30-minute transcript is ~21 000 chars ≈ 15 000 Qwen tokens in Korean,
+ * which overflows the context on its own; the notes carry the same
+ * substance in a tenth of the budget. Switching scope rebuilds the
+ * session so the LLM doesn't try to talk about meetings it was never shown.
  */
 
 interface CachedChat {
@@ -53,21 +55,6 @@ export function clearChatHistory(): void {
   }
 }
 
-function formatTranscript(segments: TranscriptSegment[]): string {
-  return segments
-    .map((s) => {
-      const speaker = s.speaker ?? '미상'
-      const mm = Math.floor(s.start / 60)
-        .toString()
-        .padStart(2, '0')
-      const ss = Math.floor(s.start % 60)
-        .toString()
-        .padStart(2, '0')
-      return `[${mm}:${ss}] ${speaker}: ${s.text}`
-    })
-    .join('\n')
-}
-
 function formatDate(ts: number): string {
   const d = new Date(ts)
   const pad = (n: number): string => n.toString().padStart(2, '0')
@@ -82,17 +69,19 @@ interface BuiltContext {
 
 function buildSystemPrompt(meetingIds: string[] | null): BuiltContext {
   const all = listMeetings()
-  const single = meetingIds && meetingIds.length === 1
   const selected: Meeting[] =
     meetingIds && meetingIds.length > 0
       ? all.filter((m) => meetingIds.includes(m.id))
       : all
 
-  // Per-meeting and overall character budgets — Qwen 2.5-7B's context
-  // window comfortably handles ~24 000 chars of system prompt while
-  // leaving room for the chat history and the model's reply.
-  const PER_MEETING = single ? 12_000 : 3_500
-  const MAX_TOTAL = 22_000
+  // Character budgets, sized against the 16 384-token context below.
+  // Korean runs ~1.43 chars per Qwen token (measured), so 16 000 chars
+  // ≈ 11 200 tokens — leaving the rules block, the chat history and the
+  // 1024-token reply room inside the usable 14 746 (context minus the
+  // 10 % context-shift reserve). Budget in chars, not tokens, because
+  // that ratio is stable for Korean notes.
+  const PER_MEETING = 6_000
+  const MAX_TOTAL = 16_000
 
   const sections: string[] = []
   let used = 0
@@ -106,14 +95,7 @@ function buildSystemPrompt(meetingIds: string[] | null): BuiltContext {
       : ''
     const meta = [attendees, tags].filter(Boolean).join('\n')
 
-    let body = ''
-    if (m.notesMd) {
-      body += '### 회의록\n' + m.notesMd
-    }
-    if (single && m.transcriptJson) {
-      const segs = JSON.parse(m.transcriptJson) as TranscriptSegment[]
-      body += '\n\n### 전체 전사본\n' + formatTranscript(segs)
-    }
+    let body = m.notesMd ? '### 회의록\n' + m.notesMd : ''
     if (!body) body = '(아직 회의록이 작성되지 않았습니다.)'
     if (body.length > PER_MEETING) body = body.slice(0, PER_MEETING) + '\n…(이하 생략)'
 
@@ -142,7 +124,7 @@ ${scopeLine}
 
 3. 한국어 존댓말로 답하세요.
 4. 답변은 마크다운으로 작성하세요. 굵게(**), 인용(>), 목록(-), 표를 자유롭게 사용. 코드 블록(\`\`\`)은 쓰지 마세요.
-5. 가능하면 어느 회의의 어느 시점/화자에서 가져온 정보인지 짧게 명시하세요 — 예: "[제품 회의 5/21] (02:14, SPK1)".
+5. 가능하면 어느 회의에서 가져온 정보인지 회의 제목으로 짧게 명시하세요 — 예: "[제품 회의 5/21]". 자료에는 회의록만 있고 전사본·타임스탬프·화자 정보는 없으므로, 시각이나 화자를 지어내지 마세요.
 6. 모르거나 회의록에 명시되지 않은 정보는 솔직히 "회의록에 명시되지 않았습니다"라고 답하세요.
 
 회의 자료:
@@ -174,7 +156,7 @@ async function getOrCreateSession(meetingIds: string[] | null): Promise<CachedCh
   const { LlamaChatSession } = await import('node-llama-cpp')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const model = (await getModel()) as any
-  const context = await model.createContext({ contextSize: 8192 })
+  const context = await model.createContext({ contextSize: 16384 })
   const session = new LlamaChatSession({
     contextSequence: context.getSequence(),
     systemPrompt: built.prompt
