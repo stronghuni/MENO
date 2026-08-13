@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Lets you pull a Windows installer off a branch without cutting a tag.
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -42,7 +44,7 @@ jobs:
     runs-on: macos-latest
     needs: verify
     # Only run on tags so we don't burn CI minutes on every push.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@v4
@@ -65,4 +67,34 @@ jobs:
         with:
           name: meeting-notes-mac
           path: dist/*.dmg
+          retention-days: 14
+
+  build-win:
+    name: build Windows installer
+    runs-on: windows-latest
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # smart-whisper ships no prebuilds — `npm ci` compiles whisper.cpp from
+      # source via node-gyp, so this needs the MSVC toolchain that
+      # windows-latest carries. node-llama-cpp and ffmpeg-static fetch their
+      # win32-x64 binaries here too; that's why the installer can't be built
+      # from macOS. postinstall (electron-builder install-app-deps) then
+      # rebuilds better-sqlite3/keytar/smart-whisper against the Electron ABI.
+      - run: npm ci
+
+      - run: npm run build:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meno-win
+          path: dist/*-setup.exe
           retention-days: 14
