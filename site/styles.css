@@ -735,9 +735,9 @@ section {
 /* Download cards */
 .dl-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  max-width: 780px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 .dl-card {
@@ -1012,6 +1012,12 @@ html.js .loaded .hero .reveal {
   }
   .nav-links a:not(.nav-cta) {
     display: none;
+  }
+}
+@media (max-width: 860px) {
+  .dl-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 780px;
   }
 }
 @media (max-width: 520px) {
