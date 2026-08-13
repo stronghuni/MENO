@@ -3,6 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # build-mac / build-win gate on refs/tags/v*, but a tag push only reaches
+    # this workflow if tags are listed here — without it those jobs could
+    # never fire and release binaries had to be built by hand.
+    tags: ['v*']
   pull_request:
     branches: [main]
   # Lets you pull a Windows installer off a branch without cutting a tag.

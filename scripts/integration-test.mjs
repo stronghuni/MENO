@@ -51,23 +51,24 @@ try {
 // ─── 2. prompts ─────────────────────────────────────────────────────────────
 console.log('\n── 2. prompts ──')
 try {
-  const { buildMeetingNotesPrompt, extractAttendees } = await import(
-    '../src/main/domain/prompts.ts'
-  )
+  const { buildMeetingNotesPrompt } = await import('../src/main/domain/prompts.ts')
+  // speaker is always null in production — diarization was removed — so the
+  // fixture matches what the transcriber actually emits.
   const segs = [
-    { start: 0, end: 5, speaker: 'SPK1', text: '안녕하세요, 회의 시작하겠습니다.' },
-    { start: 5, end: 10, speaker: 'SPK2', text: '네, 어제 논의했던 로드맵부터 보겠습니다.' }
+    { start: 0, end: 5, speaker: null, text: '안녕하세요, 회의 시작하겠습니다.' },
+    { start: 5, end: 10, speaker: null, text: '네, 어제 논의했던 로드맵부터 보겠습니다.' }
   ]
   const prompt = buildMeetingNotesPrompt('제품 회의', Date.parse('2026-05-21T10:00:00'), 3600000, segs)
   if (!prompt.includes('## 주요 안건')) throw new Error('missing 안건 section')
   if (!prompt.includes('## 액션 아이템')) throw new Error('missing 액션 section')
-  if (!prompt.includes('SPK1')) throw new Error('SPK1 not in prompt')
   if (!prompt.includes('2026-05-21 10:00')) throw new Error('date format wrong')
-  ok(`prompt = ${prompt.length} chars, contains all sections`)
-
-  const attendees = extractAttendees(segs)
-  if (attendees.length !== 2) throw new Error(`expected 2 attendees, got ${attendees.length}`)
-  ok(`attendees: ${attendees.join(', ')}`)
+  // Assert on the transcript lines only — the rule block legitimately names
+  // SPK1/미상 while instructing the model never to invent them.
+  const line = prompt.split('\n').find((l) => l.includes('안녕하세요, 회의 시작하겠습니다.'))
+  if (!/^\[\d{2}:\d{2}\] \S/.test(line ?? '')) {
+    throw new Error(`transcript line carries a speaker prefix: ${line}`)
+  }
+  ok(`prompt = ${prompt.length} chars, all sections, transcript unlabelled`)
 } catch (e) {
   bad('prompts', e.message)
 }
